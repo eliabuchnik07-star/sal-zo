@@ -5,7 +5,7 @@ Writes site/data/index.json (cities list) and site/data/city/<n>.json (all produ
 branch prices for one city). Supported chains: Shufersal. Others are added as new fetchers.
 """
 import gzip, json, os, re, sys, time, html, datetime as dt
-import urllib.request
+import urllib.request, urllib.parse, http.cookiejar
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 
@@ -24,7 +24,18 @@ CITY = {
     "1247": "חריש", "7700": "עפולה", "7800": "פרדס חנה-כרכור", "6800": "קרית אתא", "1139": "כרמיאל",
     "8200": "קרית מוצקין", "9100": "נהריה", "8000": "צפת", "9400": "יהוד-מונוסון", "2660": "יבנה",
     "2800": "קרית שמונה", "1263": "כפר ורדים",
+    "3616": "מעלה אדומים", "1015": "מבשרת ציון", "6700": "טבריה", "2500": "נשר", "9300": "זכרון יעקב",
+    "195": "קדימה-צורן", "246": "נתיבות", "3570": "אריאל", "31": "אופקים", "1031": "שדרות", "2400": "אור יהודה",
+    "240": "יקנעם עילית", "28": "מזכרת בתיה", "666": "עומר", "1063": "מעלות-תרשיחא", "4100": "קצרין",
+    "1161": "רהט", "2034": "חצור הגלילית", "831": "ירוחם", "168": "כפר יונה", "2300": "קרית טבעון",
+    "1309": "אלעד", "3797": "מודיעין עילית", "922": "רכסים", "2550": "גדרה", "2200": "דימונה",
+    "874": "מגדל העמק", "3780": "ביתר עילית", "1020": "אור עקיבא", "2620": "קרית אונו", "1167": "קיסריה",
+    "9500": "קרית ביאליק", "2100": "טירת כרמל", "9600": "קרית ים", "1061": "נוף הגליל", "681": "גבעת שמואל",
+    "182": "אבן יהודה", "7200": "נס ציונה", "9800": "בנימינה-גבעת עדה", "2560": "ערד", "7600": "עכו",
+    "154": "תל מונד", "166": "גן יבנה", "469": "קרית עקרון", "1268": "מיתר", "171": "פרדסיה",
 }
+
+UNKNOWN = {}  # city codes we have no name for (printed for maintenance)
 
 
 def get(url, tries=4):
@@ -109,6 +120,7 @@ def shufersal():
         for s in sub.iter("Store"):
             city = (s.findtext("City") or "").strip()
             if city not in CITY:
+                UNKNOWN.setdefault(city, (s.findtext("StoreName") or "") + " / שופרסל")
                 continue
             sid = str(int(s.findtext("StoreID")))
             stores[sid] = {"id": "shufersal-" + sid, "chain": "שופרסל", "sub": subname,
@@ -134,7 +146,95 @@ def shufersal():
         return [(stores[sid], items) for sid, items in ex.map(one, latest) if items]
 
 
-FETCHERS = [shufersal]
+
+# ---------- Cerberus portal (url.publishedprices.co.il): many chains, public usernames, no password ----------
+CERB = "https://url.publishedprices.co.il"
+CERB_CHAINS = {"RamiLevi": "רמי לוי", "yohananof": "יוחננוף", "TivTaam": "טיב טעם", "Keshet": "קשת טעמים",
+               "doralon": "דור אלון", "freshmarket": "פרשמרקט", "Stop_Market": "סטופ מרקט", "SalachD": "סאלח דבאח",
+               "osherad": "אושר עד"}
+
+
+def cerberus_session(user):
+    op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    op.addheaders = list(UA.items())
+    csrf = lambda h: re.search(r'name="csrftoken" content="([^"]+)"', h).group(1)
+    h = op.open(CERB + "/login", timeout=60).read().decode()
+    op.open(CERB + "/login/user", urllib.parse.urlencode(
+        {"r": "", "username": user, "password": "", "csrftoken": csrf(h)}).encode(), timeout=60).read()
+    token = csrf(op.open(CERB + "/file", timeout=60).read().decode())
+
+    def listing(search):
+        body = urllib.parse.urlencode({"iDisplayLength": 100000, "sSearch": search, "csrftoken": token}).encode()
+        return [x["fname"] for x in json.load(op.open(CERB + "/file/json/dir", body, timeout=120))["aaData"]]
+
+    def download(fname):
+        for i in range(4):
+            try:
+                return op.open(CERB + "/file/d/" + urllib.parse.quote(fname), timeout=180).read()
+            except Exception:
+                if i == 3:
+                    raise
+                time.sleep(3 * (i + 1))
+    return listing, download
+
+
+def file_store_and_stamp(fname):
+    """PriceFull<chain>-<store>-<yyyymmddhhmm>  or  PriceFull<chain>-<sub>-<store>-<yyyymmdd>-<hhmmss>"""
+    nums = re.findall(r"\d+", fname.split(".")[0])
+    if len(nums) >= 5:
+        return str(int(nums[2])), nums[3] + nums[4][:4]
+    return str(int(nums[1])), nums[2][:12]
+
+
+def parse_stores(xml, chain_key, chain_name):
+    stores = {}
+    root = ET.fromstring(xml)
+    for s in root.iter():
+        if s.tag.lower() != "store":
+            continue
+        g = lambda t: next((c.text or "" for c in s if c.tag.lower() == t.lower()), "").strip()
+        city = g("City")
+        if city not in CITY:
+            UNKNOWN.setdefault(city, g("StoreName") + " / " + chain_name)
+            continue
+        sid = str(int(g("StoreID") or 0))
+        stores[sid] = {"id": f"{chain_key}-{sid}", "chain": chain_name, "sub": "", "name": g("StoreName"),
+                       "address": g("Address"), "city": CITY[city]}
+    return stores
+
+
+def cerberus(user, chain_name):
+    listing, download = cerberus_session(user)
+    st = sorted(listing("Stores"))
+    if not st:
+        return []
+    stores = parse_stores(text(download(st[-1])), user.lower(), chain_name)
+    fresh = (dt.date.today() - dt.timedelta(days=3)).strftime("%Y%m%d")
+    latest = {}
+    for f in listing("PriceFull"):
+        try:
+            sid, stamp = file_store_and_stamp(f)
+        except (IndexError, ValueError):
+            continue
+        if sid in stores and stamp[:8] >= fresh and (sid not in latest or stamp > latest[sid][0]):
+            latest[sid] = (stamp, f)
+    print(f"{user}: {len(stores)} stores in known cities, {len(latest)} fresh price files", file=sys.stderr)
+    out = []
+    for sid, (_, f) in latest.items():
+        try:
+            out.append((stores[sid], parse_items(text(download(f)))))
+        except Exception as e:
+            print("failed", user, sid, e, file=sys.stderr)
+    return out
+
+
+def make_cerberus(user, name):
+    f = lambda: cerberus(user, name)
+    f.__name__ = user
+    return f
+
+
+FETCHERS = [shufersal] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()]
 
 
 def write_city(n, city, rows, today):
@@ -167,11 +267,15 @@ def write_city(n, city, rows, today):
 def main():
     os.makedirs(os.path.join(DATA, "city"), exist_ok=True)
     rows = []
-    for fetch in FETCHERS:
+    def safe(fetch):
         try:
-            rows += fetch()
-        except Exception as e:  # one broken chain must not stop the daily update
+            return fetch()
+        except Exception as e:  # one broken chain must not stop the update
             print("chain failed:", fetch.__name__, e, file=sys.stderr)
+            return []
+    with ThreadPoolExecutor(len(FETCHERS)) as ex:
+        for r in ex.map(safe, FETCHERS):
+            rows += r
     if not rows:
         sys.exit("no data fetched")
     by_city = {}
@@ -185,6 +289,7 @@ def main():
     with open(os.path.join(DATA, "index.json"), "w", encoding="utf-8") as f:
         json.dump({"updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"), "cities": cities},
                   f, ensure_ascii=False, indent=1)
+    print("unknown city codes:", json.dumps(UNKNOWN, ensure_ascii=False), file=sys.stderr)
     print(f"wrote {len(cities)} cities from {len(rows)} stores", file=sys.stderr)
 
 
