@@ -1,0 +1,47 @@
+name: עדכון מחירים ופרסום האתר
+
+on:
+  schedule:
+    - cron: "10 * * * *"   # every hour
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: הורדת מחירים מכל הרשתות
+        run: python3 scripts/fetch_prices.py
+      - name: חיפוש תמונות מוצרים (פעם ביום)
+        run: |
+          if [ "$(date -u +%H)" = "03" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python3 scripts/fetch_images.py
+            git config user.name "sal-zo-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add site/data/images.json
+            git diff --cached --quiet || (git commit -m "עדכון תמונות מוצרים" && git push)
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
