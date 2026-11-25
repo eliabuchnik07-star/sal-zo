@@ -302,7 +302,28 @@ def make_bina(sub, name):
     return f
 
 
-FETCHERS = [shufersal] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()] + [make_bina(u, n) for u, n in BINA_CHAINS.items()]
+# ---------- chains fetched on a computer in Israel (scripts/local_fetch.py) ----------
+LOCAL_CHAINS = {"hazihinam": "חצי חינם"}
+LOCAL_URL = "https://raw.githubusercontent.com/eliabuchnik07-star/sal-zo/local-data/{}.json.gz"
+
+
+def local(key):
+    payload = json.loads(text(get(LOCAL_URL.format(key))))
+    age = dt.datetime.now() - dt.datetime.fromisoformat(payload["fetched"])
+    print(f"{key}: local data from {payload['fetched']} ({len(payload['rows'])} stores)", file=sys.stderr)
+    if age > dt.timedelta(hours=36):
+        print(f"{key}: local data too old, skipped", file=sys.stderr)
+        return []
+    return [(s, {c: tuple(v) for c, v in items.items()}) for s, items in payload["rows"]]
+
+
+def make_local(key):
+    f = lambda: local(key)
+    f.__name__ = "local-" + key
+    return f
+
+
+FETCHERS = [shufersal] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()] + [make_bina(u, n) for u, n in BINA_CHAINS.items()] + [make_local(k) for k in LOCAL_CHAINS]
 
 
 def write_city(n, city, rows, today):
