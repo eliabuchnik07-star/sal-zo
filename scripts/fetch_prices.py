@@ -149,9 +149,9 @@ def shufersal():
 
 # ---------- Cerberus portal (url.publishedprices.co.il): many chains, public usernames, no password ----------
 CERB = "https://url.publishedprices.co.il"
-CERB_CHAINS = {"RamiLevi": "רמי לוי", "yohananof": "יוחננוף", "TivTaam": "טיב טעם", "Keshet": "קשת טעמים",
+CERB_CHAINS = {"RamiLevi": "רמי לוי", "yohananof": "יוחננוף", "TivTaam": "טיב טעם",
                "doralon": "דור אלון", "freshmarket": "פרשמרקט", "Stop_Market": "סטופ מרקט", "SalachD": "סאלח דבאח",
-               "osherad": "אושר עד"}
+               "osherad": "אושר עד", "politzer": "פוליצר", "Keshet": "קשת טעמים"}
 
 
 def cerberus_session(user):
@@ -186,6 +186,27 @@ def file_store_and_stamp(fname):
     return str(int(nums[1])), nums[2][:12]
 
 
+ALIASES = {'ת"א': "5000", "תל אביב": "5000", 'ב"ש': "9000", 'ראשל"צ': "8300", 'פ"ת': "7900", 'כ"ס': "6900",
+           "מודיעין": "1200", "קריית": None}
+
+
+def guess_city(text_):
+    """Some chains publish City=0. Find a known city name inside the store name or address."""
+    t = " " + text_.replace("קריית", "קרית").replace("-", " ") + " "
+    best = None
+    for code, name in CITY.items():
+        for variant in {name, name.split("-")[0]}:
+            if f" {variant} " in t or f" {variant}," in t or t.rstrip().endswith(" " + variant):
+                if best is None or len(variant) > len(CITY[best]):
+                    best = code
+    if best:
+        return best
+    for a, code in ALIASES.items():
+        if code and a in t:
+            return code
+    return ""
+
+
 def parse_stores(xml, chain_key, chain_name):
     stores = {}
     root = ET.fromstring(xml)
@@ -194,6 +215,8 @@ def parse_stores(xml, chain_key, chain_name):
             continue
         g = lambda t: next((c.text or "" for c in s if c.tag.lower() == t.lower()), "").strip()
         city = g("City")
+        if city not in CITY:
+            city = guess_city(g("StoreName") + " " + g("Address"))
         if city not in CITY:
             UNKNOWN.setdefault(city, g("StoreName") + " / " + chain_name)
             continue
