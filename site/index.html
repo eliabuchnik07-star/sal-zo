@@ -74,6 +74,9 @@ section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font
 .pd-row.best{background:var(--brand-soft);border-radius:12px;border-color:transparent}
 .pd-row.best .pr small{color:var(--brand-2);font-weight:700}
 .pd-add{margin-top:14px;width:100%;border:0;background:var(--brand-2);color:#fff;border-radius:14px;padding:12px;font-weight:700;font-size:1rem}
+.bi .nm small.only{display:block;color:#b45309;font-weight:700}
+.onlybox{background:#fff4e0;color:#8a4b00;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:.88rem;line-height:1.5}
+@media (prefers-color-scheme: dark){.onlybox{background:#3a2a10;color:#ffcf8a}.bi .nm small.only{color:#ffb454}}
 .thumb{aspect-ratio:1/1;max-width:100%;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line)}
 .thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
 .thumb .ph{font-family:var(--display);font-weight:800;font-size:2.2rem;color:#b9c7bf}
@@ -306,6 +309,8 @@ function add(i){const p=CITY.products[i];basket[p[0]]=basket[p[0]]||{q:0,name:p[
 function loadSample(){basket={};for(const n of SAMPLE){const i=find(n,1)[0];if(i!=null){const p=CITY.products[i];basket[p[0]]={q:1,name:p[1],unit:p[3]}}}ls.set("basket2",basket)}
 function save(){ls.set("basket2",basket);ls.set("touched",true);render()}
 
+function onlyStore(code){if(!CITY||!CITY.code2i.has(code))return null;const i=CITY.code2i.get(code);
+  if(CITY.carry[i]!==1)return null;const si=CITY.byStore.findIndex(m=>m.has(i));return CITY.stores[si]||null}
 function renderBasket(){
   const ul=$("list");const codes=Object.keys(basket);
   const items=codes.reduce((a,c)=>a+basket[c].q,0);$("bcount").textContent=items?`${items} פריטים`:"";
@@ -313,7 +318,7 @@ function renderBasket(){
   ul.innerHTML="";
   codes.forEach(code=>{const b=basket[code];const li=document.createElement("li");li.className="bi";
     const inCity=CITY&&CITY.code2i.has(code);
-    li.innerHTML=`${thumb(code,b.name)}<div class="nm">${esc(b.name)}<small>${esc(b.unit||"")}${CITY&&!inCity?" · לא נמכר באף סניף בעיר":""}</small></div>
+    li.innerHTML=`${thumb(code,b.name)}<div class="nm">${esc(b.name)}<small>${esc(b.unit||"")}${CITY&&!inCity?" · לא נמכר באף סניף בעיר":""}</small>${(()=>{const o=onlyStore(code);return o?`<small class="only">נמכר רק ב${esc(o.chain)} · ${esc(o.name)}</small>`:""})()}</div>
       <div class="qty"><button aria-label="הוסף">+</button><span>${b.q}</span><button aria-label="הפחת">−</button></div>`;
     const [plus,minus]=li.querySelectorAll(".qty button");
     plus.onclick=()=>{b.q++;save();showProducts()};
@@ -333,6 +338,9 @@ function renderStores(){
   const best=rows[0],full=rows.filter(r=>r.cnt.none===best.cnt.none),worst=full[full.length-1];
   const shown=showAllStores?rows:rows.slice(0,8);
   box.innerHTML="";
+  const only=codes.map(c=>[c,onlyStore(c)]).filter(x=>x[1]);
+  if(only.length){const n=document.createElement("div");n.className="onlybox";
+    n.innerHTML=`<b>שימו לב:</b>${only.map(([c,o])=>`<div>${esc(basket[c].name)} נמכר רק ב${esc(o.chain)} · ${esc(o.name)}</div>`).join("")}`;box.appendChild(n)}
   shown.forEach((r,k)=>{const d=document.createElement("div");d.className="st"+(k===0?" best":"");if(k===0)d.id="beststore";
     const tags=[];
     if(r.cnt.none)tags.push(`<span class="tag r">${r.cnt.none} לא נמכרים בסניף</span>`);
