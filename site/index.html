@@ -220,7 +220,7 @@ let basket=ls.get("basket2",{});
 const SAMPLE=["חלב טרי 3%","במבה","קוטג","לחם אחיד","ביצים","קפה טורקי","שמן קנולה","פסטה"];
 const POPULAR=["חלב","לחם","ביצים","במבה","קוטג'","קפה","אורז","שוקולד","טונה","שמן"];
 
-function imgSrcs(code){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p);
+function imgSrcs(code){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p.replace(/\.200\.jpg$/,".400.jpg"));
   for(const t of EXTRA_IMG)a.push(t.replace("{code}",code));return a}
 // extra catalog image sources (by barcode), empty unless the site owner chooses to add one
 const EXTRA_IMG=[];
