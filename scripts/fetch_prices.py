@@ -373,7 +373,10 @@ def main():
         by_city.setdefault(s["city"], []).append((s, items))
     today = dt.date.today()
     cities = []
-    for n, city in enumerate(sorted(by_city)):
+    # stable file name per city (its CBS code), so an open page never loads another city's file
+    code_of = {name: code for code, name in CITY.items()}
+    for city in sorted(by_city):
+        n = code_of[city]
         count = write_city(n, city, by_city[city], today)
         cities.append({"name": city, "file": f"city/{n}.json", "stores": len(by_city[city]), "products": count})
     with open(os.path.join(DATA, "index.json"), "w", encoding="utf-8") as f:
