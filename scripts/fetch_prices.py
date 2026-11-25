@@ -257,7 +257,52 @@ def make_cerberus(user, name):
     return f
 
 
-FETCHERS = [shufersal] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()]
+# ---------- binaprojects.com portals (King Store, Maayan 2000, Zol Vebegadol, ...) ----------
+BINA_CHAINS = {"kingstore": "קינג סטור", "maayan2000": "מעיין 2000", "zolvebegadol": "זול ובגדול",
+               "shefabirkathashem": "שפע ברכת השם", "supersapir": "סופר ספיר", "shuk-hayir": "שוק העיר"}
+
+
+def bina(sub, chain_name):
+    base = f"https://{sub}.binaprojects.com"
+
+    def listing(ftype):
+        req = urllib.request.Request(base + "/MainIO_Hok.aspx", urllib.parse.urlencode(
+            {"WStore": "", "WDate": "", "WFileType": ftype}).encode(), headers=UA)
+        return [x["FileNm"] for x in json.load(urllib.request.urlopen(req, timeout=120))]
+
+    def download(fname):
+        req = urllib.request.Request(base + "/Download.aspx?FileNm=" + urllib.parse.quote(fname), b"", headers=UA)
+        url = json.load(urllib.request.urlopen(req, timeout=60))[0]["SPath"]
+        return get(url)
+
+    st = sorted(listing(1), key=lambda f: re.findall(r"\d{8}-\d+", f)[-1])
+    stores = parse_stores(text(download(st[-1])), sub, chain_name)
+    fresh = (dt.date.today() - dt.timedelta(days=3)).strftime("%Y%m%d")
+    latest = {}
+    for f in listing(4):
+        try:
+            sid, stamp = file_store_and_stamp(f)
+        except (IndexError, ValueError):
+            continue
+        if sid in stores and stamp[:8] >= fresh and (sid not in latest or stamp > latest[sid][0]):
+            latest[sid] = (stamp, f)
+    print(f"{sub}: {len(stores)} stores in known cities, {len(latest)} fresh price files", file=sys.stderr)
+    out = []
+    for sid, (_, f) in latest.items():
+        try:
+            out.append((stores[sid], parse_items(text(download(f)))))
+        except Exception as e:
+            print("failed", sub, sid, e, file=sys.stderr)
+    return out
+
+
+def make_bina(sub, name):
+    f = lambda: bina(sub, name)
+    f.__name__ = sub
+    return f
+
+
+FETCHERS = [shufersal] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()] + [make_bina(u, n) for u, n in BINA_CHAINS.items()]
 
 
 def write_city(n, city, rows, today):
@@ -301,6 +346,7 @@ def main():
             rows += r
     if not rows:
         sys.exit("no data fetched")
+    rows = [(s, items) for s, items in rows if len(items) >= 300]  # skip kiosks / broken files
     by_city = {}
     for s, items in rows:
         by_city.setdefault(s["city"], []).append((s, items))
