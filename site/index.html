@@ -245,7 +245,10 @@ async function loadCity(){
   const c=INDEX.cities.find(x=>x.name===$("city").value);
   $("meta").textContent=`טוען את המחירים של ${c.name}…`;$("q").disabled=true;
   $("products").innerHTML='<div class="hint loading"><span class="spin"></span>טוען מחירים מכל הסניפים בעיר…</div>';
-  const d=await (await fetch("data/"+c.file,{cache:"no-cache"})).json();
+  let d=await (await fetch("data/"+c.file,{cache:"no-cache"})).json();
+  if(d.city!==c.name){INDEX=await (await fetch("data/index.json",{cache:"no-cache"})).json();
+    const c2=INDEX.cities.find(x=>x.name===c.name);if(!c2){location.reload();return}
+    d=await (await fetch("data/"+c2.file,{cache:"no-cache"})).json()}
   const n=d.products.length,carry=new Uint16Array(n),fresh=new Uint16Array(n),minPrice=new Float32Array(n).fill(1e9),minStore=new Int16Array(n).fill(-1);
   const byStore=d.prices.map((row,si)=>{const m=new Map();for(const [i,p,days] of row){m.set(i,[p,days]);carry[i]++;if(days>=0&&days<=3)fresh[i]++;if(p<minPrice[i]){minPrice[i]=p;minStore[i]=si}}return m});
   CITY={...d,carry,fresh,minPrice,minStore,byStore,code2i:new Map(d.products.map((p,i)=>[p[0],i])),search:d.products.map(p=>norm(p[1]+" "+p[2]+" "+p[0]))};
