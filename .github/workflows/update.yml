@@ -29,9 +29,9 @@ jobs:
           python-version: "3.12"
       - name: הורדת מחירים מכל הרשתות
         run: python3 scripts/fetch_prices.py
-      - name: חיפוש תמונות מוצרים (פעם ביום, או בהרצה ידנית)
+      - name: חיפוש תמונות מוצרים (פעם ביום בלילה, או בהרצה ידנית)
         run: |
-          if [ "$(date -u +%H)" = "03" ] || [ "${{ github.event_name }}" != "schedule" ]; then
+          if [ "$(date -u +%H)" = "03" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             python3 scripts/fetch_images.py
             git config user.name "sal-zo-bot"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
