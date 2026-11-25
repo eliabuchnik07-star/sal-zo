@@ -77,6 +77,10 @@ section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font
 .bi .nm small.only{display:block;color:#b45309;font-weight:700}
 .onlybox{background:#fff4e0;color:#8a4b00;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:.88rem;line-height:1.5}
 @media (prefers-color-scheme: dark){.onlybox{background:#3a2a10;color:#ffcf8a}.bi .nm small.only{color:#ffb454}}
+.clogo{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff;border:1px solid var(--line);overflow:hidden;flex:none}
+.clogo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.clogo b{width:100%;height:100%;display:grid;place-items:center;background:var(--c);color:#fff;font-weight:800;font-size:.9rem}
+.clogo.sm{width:20px;height:20px;border-radius:6px}.clogo.sm img{padding:1px}.clogo.sm b{font-size:.65rem}
 .thumb{aspect-ratio:1/1;max-width:100%;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line)}
 .thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
 .thumb .ph{font-family:var(--display);font-weight:800;font-size:2.2rem;color:#b9c7bf}
@@ -217,6 +221,13 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const norm=s=>s.toLowerCase().replace(/["'״׳`]/g,"").replace(/\s+/g," ").trim();
 const CHAIN_COLOR={"שופרסל":"#d0021b","רמי לוי":"#1b4fa0","טיב טעם":"#7a1fa2","דור אלון":"#00897b","פרשמרקט":"#43a047","סטופ מרקט":"#ef6c00","יוחננוף":"#2e7d32","אושר עד":"#283593","ויקטורי":"#c62828","קרפור":"#1565c0","חצי חינם":"#f9a825"};
 const chainColor=c=>CHAIN_COLOR[c]||"#546e7a";
+const CHAIN_SITE={"שופרסל":"shufersal.co.il","רמי לוי":"rami-levy.co.il","טיב טעם":"tivtaam.co.il","יוחננוף":"yochananof.co.il","אושר עד":"osherad.co.il",
+  "ויקטורי":"victoryonline.co.il","קרפור":"carrefour.co.il","חצי חינם":"hazi-hinam.co.il","פרשמרקט":"freshmarket.co.il","קינג סטור":"kingstore.co.il",
+  "סופר ספיר":"supersapir.co.il","דור אלון":"doralon.co.il","סטופ מרקט":"stopmarket.co.il","מעיין 2000":"maayan2000.co.il"};
+// chain logo: the chain's own site icon, or a colored initial when there is none
+function logo(chain,cls=""){const d=CHAIN_SITE[chain],ini=esc((chain||"?").trim()[0]||"?"),bg=chainColor(chain);
+  return `<span class="clogo ${cls}" style="--c:${bg}">${d?`<img alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain=${d}&sz=64" onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:'${ini}'}))">`:`<b>${ini}</b>`}</span>`}
+
 
 let INDEX=null,CITY=null,IMAGES={},showAllStores=false;
 let basket=ls.get("basket2",{});
@@ -291,7 +302,7 @@ function showProducts(){
 }
 function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products[i],q=basket[p[0]]?.q;
   return `<article class="prod" data-i="${i}">${thumb(p[0],p[1])}<div><div class="pname" title="${esc(p[1])}">${esc(p[1])}</div><div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))}</div></div>
-  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap"><i style="background:${chainColor(st.chain)}"></i>${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name||"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
+  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap">${logo(st.chain,"sm")}${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name||"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
 
 function detail(i){const p=CITY.products[i],rows=[];
   CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
@@ -299,7 +310,7 @@ function detail(i){const p=CITY.products[i],rows=[];
   const one=rows.length===1?CITY.stores[rows[0][1]]:null;
   $("pd").innerHTML=`<div class="pd-head">${thumb(p[0],p[1])}<div><h3>${esc(p[1])}</h3><p>${esc([p[2],p[3]].filter(Boolean).join(" · "))}</p></div><button class="pd-x" aria-label="סגור">✕</button></div>
   ${one?`<div class="pd-only">קיים רק בסניף ${esc(one.chain)} · ${esc(one.name)}</div>`:`<div class="pd-only">נמכר ב־${rows.length} סניפים ב${esc(CITY.city)} · הכי זול ב${esc(CITY.stores[rows[0][1]].chain)}</div>`}
-  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}"><i style="background:${chainColor(s.chain)}"></i><div class="nm"><b>${esc(s.chain)}</b><small>${esc(s.name)}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
+  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}</b><small>${esc(s.name)}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
   <button class="pd-add">הוסף לסל</button>`;
   $("pdback").classList.add("on");
   $("pd").querySelector(".pd-x").onclick=closeDetail;$("pd").querySelector(".pd-add").onclick=()=>{add(i);closeDetail()}}
@@ -349,7 +360,7 @@ function renderStores(){
     if(!r.cnt.none&&!r.cnt.out&&!r.cnt.maybe)tags.push('<span class="tag">הכל במלאי</span>');
     const same=r.cnt.none===best.cnt.none;
     const note=k===0?(worst!==best?`חוסכים ${fmt(worst.total-best.total)}`:"הכי זול"):same?`+${fmt(r.total-best.total)}`:"חסרים מוצרים";
-    d.innerHTML=`<div class="row"><span class="badge" style="background:${chainColor(r.s.chain)}">${k+1}</span>
+    d.innerHTML=`<div class="row"><span class="badge" style="background:${chainColor(r.s.chain)}">${k+1}</span>${logo(r.s.chain)}
       <div class="who"><b>${esc(r.s.chain)} · ${esc(r.s.name)}</b><small>${esc(r.s.address||r.s.sub||"")}</small></div>
       <div class="price"><b>${fmt(r.total)}</b><small>${note}</small></div></div>
       <div class="tags">${tags.join("")}</div>
