@@ -77,6 +77,10 @@ section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font
 .bi .nm small.only{display:block;color:#b45309;font-weight:700}
 .onlybox{background:#fff4e0;color:#8a4b00;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:.88rem;line-height:1.5}
 @media (prefers-color-scheme: dark){.onlybox{background:#3a2a10;color:#ffcf8a}.bi .nm small.only{color:#ffb454}}
+.clogo{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff;border:1px solid var(--line);overflow:hidden;flex:none}
+.clogo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.clogo b{width:100%;height:100%;display:grid;place-items:center;background:var(--c);color:#fff;font-weight:800;font-size:.9rem}
+.clogo.sm{width:20px;height:20px;border-radius:6px}.clogo.sm img{padding:1px}.clogo.sm b{font-size:.65rem}
 .thumb{aspect-ratio:1/1;max-width:100%;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line)}
 .thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
 .thumb .ph{font-family:var(--display);font-weight:800;font-size:2.2rem;color:#b9c7bf}
@@ -90,6 +94,11 @@ section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font
 .add{border:0;background:var(--brand-2);color:#fff;border-radius:12px;width:40px;height:40px;font-size:1.4rem;font-weight:700;display:grid;place-items:center;flex:none}
 .add.in{background:var(--brand-soft);color:var(--brand-2);font-size:1rem;width:auto;padding:0 10px}
 .hint{background:var(--card);border-radius:var(--r);padding:20px;color:var(--muted);box-shadow:var(--shadow)}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:6px;scrollbar-width:thin}
+.cat{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:86px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:10px 8px;font-weight:600;font-size:.82rem}
+.cat span{font-size:1.5rem;line-height:1}
+.cat:hover{border-color:var(--brand-2)}
+.cat.on{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;font-weight:500}
 .chip:hover{border-color:var(--brand-2);color:var(--brand-2)}
@@ -217,10 +226,33 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const norm=s=>s.toLowerCase().replace(/["'״׳`]/g,"").replace(/\s+/g," ").trim();
 const CHAIN_COLOR={"שופרסל":"#d0021b","רמי לוי":"#1b4fa0","טיב טעם":"#7a1fa2","דור אלון":"#00897b","פרשמרקט":"#43a047","סטופ מרקט":"#ef6c00","יוחננוף":"#2e7d32","אושר עד":"#283593","ויקטורי":"#c62828","קרפור":"#1565c0","חצי חינם":"#f9a825"};
 const chainColor=c=>CHAIN_COLOR[c]||"#546e7a";
+const CHAIN_SITE={"שופרסל":"shufersal.co.il","רמי לוי":"rami-levy.co.il","טיב טעם":"tivtaam.co.il","יוחננוף":"yochananof.co.il","אושר עד":"osherad.co.il",
+  "ויקטורי":"victoryonline.co.il","קרפור":"carrefour.co.il","חצי חינם":"hazi-hinam.co.il","פרשמרקט":"freshmarket.co.il","קינג סטור":"kingstore.co.il",
+  "סופר ספיר":"supersapir.co.il","דור אלון":"doralon.co.il","סטופ מרקט":"stopmarket.co.il","מעיין 2000":"maayan2000.co.il"};
+// chain logo: the chain's own site icon, or a colored initial when there is none
+function logo(chain,cls=""){const d=CHAIN_SITE[chain],ini=esc((chain||"?").trim()[0]||"?"),bg=chainColor(chain);
+  return `<span class="clogo ${cls}" style="--c:${bg}">${d?`<img alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain=${d}&sz=64" onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:'${ini}'}))">`:`<b>${ini}</b>`}</span>`}
+
 
 let INDEX=null,CITY=null,IMAGES={},showAllStores=false;
 let basket=ls.get("basket2",{});
 const SAMPLE=["חלב טרי 3%","במבה","קוטג","לחם אחיד","ביצים","קפה טורקי","שמן קנולה","פסטה"];
+const CATS=[
+ ["fruit","🥦","פירות וירקות","עגבני מלפפון תפוח בננה בננות תפוז לימון בצל שום גזר תפוא תפוחי פלפל חסה כרוב אבוקדו ענבים אבטיח מלון קישוא קישואים חציל פטרוזיליה כוסברה שמיר נענע פטריות אגס אפרסק שזיף תות מנגו קלמנטינה ברוקולי כרובית בטטה סלק צנון אננס קיווי רימון"],
+ ["dairy","🥛","חלב וביצים","חלב גבינה גבינת קוטג יוגורט יופלה מעדן שמנת חמאה לבן לבנה ביצים ביצה מילקי דנונה צפתית בולגרית פרמזן מוצרלה צהובה אשל גיל"],
+ ["meat","🍗","בשר, עוף ודגים","בשר עוף חזה שניצל כרעיים פרגית הודו נקניק נקניקיות קבב המבורגר אנטריקוט טחון כבד פסטרמה סלמי צלי שוקיים כנפיים דג דגים סלמון טונה אמנון מושט בקלה דניס לברק סרדינים הרינג"],
+ ["bread","🍞","לחם ומאפים","לחם לחמניות לחמניה פיתה פיתות בגט חלה טורטיה עוגה עוגת עוגיות קרואסון מאפה בורקס קרקר פריכיות"],
+ ["pantry","🍝","מזווה ובישול","אורז פסטה ספגטי קמח סוכר מלח שמן עדשים חומוס שעועית פתיתים קוסקוס רסק רוטב תבלין פפריקה כמון קטשופ מיונז חרדל טחינה דבש ריבה ממרח דגני קורנפלקס שיבולת אטריות שימורי תירס זיתים מרק"],
+ ["snacks","🍫","חטיפים ומתוקים","במבה ביסלי תפוצ ציפס שוקולד חטיף וופל סוכריות מסטיק פופקורן בייגלה אגוזים גרעינים קליק"],
+ ["drinks","🥤","משקאות","מים מיץ קולה משקה סודה בירה יין וודקה קפה תה נקטר ספרייט פאנטה שוקו פריגת תפוזינה"],
+ ["frozen","❄️","קפואים","קפוא קפואה קפואים גלידה שלגון ארטיק"],
+ ["home","🧽","ניקיון ובית","אקונומיקה סבון ניקוי כביסה מרכך כלים טישו טואלט מגבונים שקיות אלומיניום ספוג מטהר מנקה"],
+ ["care","🧴","טיפוח ותינוקות","שמפו משחת מברשת דאודורנט קרם טיטולים חיתולים האגיס פמפרס תחליב גילוח הנקה"]
+].map(([id,ic,name,w])=>({id,ic,name,re:new RegExp("(^|[ \\-/,.(])("+w.split(" ").map(x=>x.length<=3?x+"(?=$|[ \\-/,.)%0-9])":x).join("|")+")")}));
+// a product belongs to the first category that matches, in this order (so "שוקולד חלב" is a snack, "דגני בוקר" is pantry)
+const CAT_ORDER=["snacks","frozen","care","home","drinks","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
+function catOf(i){const t=" "+CITY.search[i];for(const c of CAT_ORDER)if(c.re.test(t))return c.id;return null}
+let CAT=null,catLimit=60;
 const POPULAR=["חלב","לחם","ביצים","במבה","קוטג'","קפה","אורז","שוקולד","טונה","שמן"];
 
 function imgSrcs(code){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p.replace(/\.200\.jpg$/,".400.jpg"));
@@ -255,6 +287,7 @@ async function loadCity(){
   const n=d.products.length,carry=new Uint16Array(n),fresh=new Uint16Array(n),minPrice=new Float32Array(n).fill(1e9),minStore=new Int16Array(n).fill(-1);
   const byStore=d.prices.map((row,si)=>{const m=new Map();for(const [i,p,days] of row){m.set(i,[p,days]);carry[i]++;if(days>=0&&days<=3)fresh[i]++;if(p<minPrice[i]){minPrice[i]=p;minStore[i]=si}}return m});
   CITY={...d,carry,fresh,minPrice,minStore,byStore,code2i:new Map(d.products.map((p,i)=>[p[0],i])),search:d.products.map(p=>norm(p[1]+" "+p[2]+" "+p[0]))};
+  CITY.cat=CITY.products.map((_,i)=>catOf(i));
   const chains=[...new Set(d.stores.map(s=>s.chain))];
   $("meta").textContent=`${d.stores.length} סניפים של ${chains.length} רשתות · ${n.toLocaleString("he-IL")} מוצרים · עודכן ${INDEX.updated}`;
   $("q").disabled=false;
@@ -273,25 +306,34 @@ function find(t,limit){const w=norm(t).split(" ").filter(Boolean);if(!w.length)r
   const out=[];for(let i=0;i<CITY.search.length;i++){const s=CITY.search[i];if(w.every(x=>s.includes(x)))out.push(i)}
   out.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);return out.slice(0,limit)}
 
+function catBar(){return `<div class="cats">${CATS.map(c=>`<button class="cat${CAT===c.id?" on":""}" data-c="${c.id}"><span>${c.ic}</span>${c.name}</button>`).join("")}</div>`}
+function inCat(i){return !CAT||CITY.cat[i]===CAT}
 function showProducts(){
   if(!CITY)return;const t=$("q").value.trim();const box=$("products");
-  if(!t){
+  if(CAT&&!t){const c=CATS.find(x=>x.id===CAT);const ids=[];
+    for(let i=0;i<CITY.products.length;i++)if(CITY.cat[i]===CAT)ids.push(i);
+    ids.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);
+    $("ptitle").innerHTML=`${c.ic} ${esc(c.name)} <small>${ids.length.toLocaleString("he-IL")} מוצרים ב${esc(CITY.city)}</small>`;
+    box.innerHTML=catBar()+(ids.length?grid(ids.slice(0,catLimit)):`<div class="hint">אין מוצרים בקטגוריה הזאת ב${esc(CITY.city)}.</div>`)+(ids.length>catLimit?`<button class="more" id="catmore">הצג עוד</button>`:"");
+    const m=$("catmore");if(m)m.onclick=()=>{catLimit+=60;showProducts()};
+  }else if(!t){
     $("ptitle").innerHTML="מה קונים היום?";
     const top=[];for(let i=0;i<CITY.products.length;i++)top.push(i);
     top.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);
-    box.innerHTML=`<div class="hint">חפשו מוצר בשורת החיפוש, או התחילו מאחד מאלה:<div class="chips">${POPULAR.map(p=>`<button class="chip" data-q="${esc(p)}">${esc(p)}</button>`).join("")}</div></div><h2 style="margin-top:20px">הנמכרים ביותר ב${esc(CITY.city)}</h2>`+grid(top.slice(0,24));
+    box.innerHTML=catBar()+`<div class="hint">חפשו מוצר בשורת החיפוש, בחרו קטגוריה, או התחילו מאחד מאלה:<div class="chips">${POPULAR.map(p=>`<button class="chip" data-q="${esc(p)}">${esc(p)}</button>`).join("")}</div></div><h2 style="margin-top:20px">הנמכרים ביותר ב${esc(CITY.city)}</h2>`+grid(top.slice(0,24));
   }else{
-    const hits=find(t,60);
-    $("ptitle").innerHTML=`תוצאות עבור "${esc(t)}" <small>${hits.length>=60?"60+":hits.length} מוצרים</small>`;
-    box.innerHTML=hits.length?grid(hits):`<div class="hint">לא מצאנו מוצר כזה בסניפים של ${esc(CITY.city)}. נסו מילה אחרת או ברקוד.</div>`;
+    const hits=find(t,CAT?5000:60).filter(inCat).slice(0,60);const c=CATS.find(x=>x.id===CAT);
+    $("ptitle").innerHTML=`תוצאות עבור "${esc(t)}"${c?" ב"+esc(c.name):""} <small>${hits.length>=60?"60+":hits.length} מוצרים</small>`;
+    box.innerHTML=catBar()+(hits.length?grid(hits):`<div class="hint">לא מצאנו מוצר כזה בסניפים של ${esc(CITY.city)}. נסו מילה אחרת או ברקוד.</div>`);
   }
+  box.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{CAT=CAT===b.dataset.c?null:b.dataset.c;catLimit=60;showProducts()});
   box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{$("q").value=b.dataset.q;showProducts()});
   box.querySelectorAll(".add").forEach(b=>b.onclick=e=>{e.stopPropagation();add(+b.dataset.i)});
   box.querySelectorAll(".prod").forEach(a=>a.onclick=()=>detail(+a.dataset.i));
 }
 function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products[i],q=basket[p[0]]?.q;
   return `<article class="prod" data-i="${i}">${thumb(p[0],p[1])}<div><div class="pname" title="${esc(p[1])}">${esc(p[1])}</div><div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))}</div></div>
-  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap"><i style="background:${chainColor(st.chain)}"></i>${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name||"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
+  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap">${logo(st.chain,"sm")}${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name||"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
 
 function detail(i){const p=CITY.products[i],rows=[];
   CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
@@ -299,7 +341,7 @@ function detail(i){const p=CITY.products[i],rows=[];
   const one=rows.length===1?CITY.stores[rows[0][1]]:null;
   $("pd").innerHTML=`<div class="pd-head">${thumb(p[0],p[1])}<div><h3>${esc(p[1])}</h3><p>${esc([p[2],p[3]].filter(Boolean).join(" · "))}</p></div><button class="pd-x" aria-label="סגור">✕</button></div>
   ${one?`<div class="pd-only">קיים רק בסניף ${esc(one.chain)} · ${esc(one.name)}</div>`:`<div class="pd-only">נמכר ב־${rows.length} סניפים ב${esc(CITY.city)} · הכי זול ב${esc(CITY.stores[rows[0][1]].chain)}</div>`}
-  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}"><i style="background:${chainColor(s.chain)}"></i><div class="nm"><b>${esc(s.chain)}</b><small>${esc(s.name)}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
+  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}</b><small>${esc(s.name)}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
   <button class="pd-add">הוסף לסל</button>`;
   $("pdback").classList.add("on");
   $("pd").querySelector(".pd-x").onclick=closeDetail;$("pd").querySelector(".pd-add").onclick=()=>{add(i);closeDetail()}}
@@ -349,7 +391,7 @@ function renderStores(){
     if(!r.cnt.none&&!r.cnt.out&&!r.cnt.maybe)tags.push('<span class="tag">הכל במלאי</span>');
     const same=r.cnt.none===best.cnt.none;
     const note=k===0?(worst!==best?`חוסכים ${fmt(worst.total-best.total)}`:"הכי זול"):same?`+${fmt(r.total-best.total)}`:"חסרים מוצרים";
-    d.innerHTML=`<div class="row"><span class="badge" style="background:${chainColor(r.s.chain)}">${k+1}</span>
+    d.innerHTML=`<div class="row"><span class="badge" style="background:${chainColor(r.s.chain)}">${k+1}</span>${logo(r.s.chain)}
       <div class="who"><b>${esc(r.s.chain)} · ${esc(r.s.name)}</b><small>${esc(r.s.address||r.s.sub||"")}</small></div>
       <div class="price"><b>${fmt(r.total)}</b><small>${note}</small></div></div>
       <div class="tags">${tags.join("")}</div>
