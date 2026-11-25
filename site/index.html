@@ -56,6 +56,24 @@ section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 @media (max-width:480px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
 .prod{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.prod{cursor:pointer}
+.pd-back{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.pd-back.on{display:flex}
+@media(min-width:700px){.pd-back{align-items:center}}
+.pd{background:var(--card);color:var(--ink);width:min(560px,100%);max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px 22px}
+@media(min-width:700px){.pd{border-radius:20px}}
+.pd-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}.pd-head .thumb{width:84px;flex:none}
+.pd-head h3{margin:0;font-size:1.1rem}.pd-head p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+.pd-x{margin-inline-start:auto;border:0;background:var(--bg);color:var(--ink);border-radius:50%;width:36px;height:36px;font-size:1.2rem;flex:none}
+.pd-only{background:var(--brand-soft);color:var(--brand-2);font-weight:700;border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.pd-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.pd-row i{width:10px;height:10px;border-radius:50%;flex:none}
+.pd-row .nm{flex:1;min-width:0}.pd-row .nm b{display:block}.pd-row .nm small{color:var(--muted)}
+.pd-row .pr{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;text-align:left}
+.pd-row .pr small{display:block;font-family:inherit;font-weight:500;font-size:.75rem;color:var(--muted)}
+.pd-row.best{background:var(--brand-soft);border-radius:12px;border-color:transparent}
+.pd-row.best .pr small{color:var(--brand-2);font-weight:700}
+.pd-add{margin-top:14px;width:100%;border:0;background:var(--brand-2);color:#fff;border-radius:14px;padding:12px;font-weight:700;font-size:1rem}
 .thumb{aspect-ratio:1/1;max-width:100%;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line)}
 .thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
 .thumb .ph{font-family:var(--display);font-weight:800;font-size:2.2rem;color:#b9c7bf}
@@ -182,6 +200,7 @@ details:not([open]) summary::before{content:"◂ "}
     </p>
   </aside>
 </main>
+<div class="pd-back" id="pdback"><div class="pd" id="pd" role="dialog" aria-modal="true"></div></div>
 </div>
 
 <div class="dock" id="dock"><div class="gut"><div class="txt" id="docktxt"></div><button id="dockbtn">לסניף הכי זול</button></div></div>
@@ -211,6 +230,7 @@ function thumb(code,name){const l=imgSrcs(code),ph=esc((name||"?").trim()[0]||"?
   return `<div class="thumb">${l.length?`<img loading="lazy" alt="" src="${l[0]}" data-alt="${l.slice(1).join("|")}" data-ph="${ph}" onerror="nextImg(this)">`:`<span class="ph">${ph}</span>`}</div>`}
 
 async function boot(){
+  $("pdback").onclick=e=>{if(e.target.id==="pdback")closeDetail()};
   try{INDEX=await (await fetch("data/index.json",{cache:"no-cache"})).json()}
   catch(e){$("meta").textContent="לא הצלחנו לטעון את הנתונים. נסו לרענן את הדף.";return}
   fetch("data/images.json",{cache:"no-cache"}).then(r=>r.ok?r.json():{}).then(j=>{IMAGES=j;render()}).catch(()=>{});
@@ -260,12 +280,25 @@ function showProducts(){
     box.innerHTML=hits.length?grid(hits):`<div class="hint">לא מצאנו מוצר כזה בסניפים של ${esc(CITY.city)}. נסו מילה אחרת או ברקוד.</div>`;
   }
   box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{$("q").value=b.dataset.q;showProducts()});
-  box.querySelectorAll(".add").forEach(b=>b.onclick=()=>add(+b.dataset.i));
+  box.querySelectorAll(".add").forEach(b=>b.onclick=e=>{e.stopPropagation();add(+b.dataset.i)});
+  box.querySelectorAll(".prod").forEach(a=>a.onclick=()=>detail(+a.dataset.i));
 }
 function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products[i],q=basket[p[0]]?.q;
-  return `<article class="prod">${thumb(p[0],p[1])}<div><div class="pname" title="${esc(p[1])}">${esc(p[1])}</div><div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))}</div></div>
-  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap"><i style="background:${chainColor(st.chain)}"></i>הכי זול: ${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:"רק בסניף אחד"}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
+  return `<article class="prod" data-i="${i}">${thumb(p[0],p[1])}<div><div class="pname" title="${esc(p[1])}">${esc(p[1])}</div><div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))}</div></div>
+  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap"><i style="background:${chainColor(st.chain)}"></i>${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name||"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
 
+function detail(i){const p=CITY.products[i],rows=[];
+  CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
+  rows.sort((a,b)=>a[0]-b[0]);const min=rows.length?rows[0][0]:0;
+  const one=rows.length===1?CITY.stores[rows[0][1]]:null;
+  $("pd").innerHTML=`<div class="pd-head">${thumb(p[0],p[1])}<div><h3>${esc(p[1])}</h3><p>${esc([p[2],p[3]].filter(Boolean).join(" · "))}</p></div><button class="pd-x" aria-label="סגור">✕</button></div>
+  ${one?`<div class="pd-only">קיים רק בסניף ${esc(one.chain)} · ${esc(one.name)}</div>`:`<div class="pd-only">נמכר ב־${rows.length} סניפים ב${esc(CITY.city)} · הכי זול ב${esc(CITY.stores[rows[0][1]].chain)}</div>`}
+  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}"><i style="background:${chainColor(s.chain)}"></i><div class="nm"><b>${esc(s.chain)}</b><small>${esc(s.name)}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
+  <button class="pd-add">הוסף לסל</button>`;
+  $("pdback").classList.add("on");
+  $("pd").querySelector(".pd-x").onclick=closeDetail;$("pd").querySelector(".pd-add").onclick=()=>{add(i);closeDetail()}}
+function closeDetail(){$("pdback").classList.remove("on")}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDetail()});
 function add(i){const p=CITY.products[i];basket[p[0]]=basket[p[0]]||{q:0,name:p[1],unit:p[3]};basket[p[0]].q++;save();showProducts()}
 function loadSample(){basket={};for(const n of SAMPLE){const i=find(n,1)[0];if(i!=null){const p=CITY.products[i];basket[p[0]]={q:1,name:p[1],unit:p[3]}}}ls.set("basket2",basket)}
 function save(){ls.set("basket2",basket);ls.set("touched",true);render()}
