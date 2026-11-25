@@ -80,6 +80,7 @@ section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font
 .clogo{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff;border:1px solid var(--line);overflow:hidden;flex:none}
 .clogo img{width:100%;height:100%;object-fit:contain;padding:4px}
 .clogo b{width:100%;height:100%;display:grid;place-items:center;background:var(--c);color:#fff;font-weight:800;font-size:.9rem}
+.clogo.wide{width:58px}.clogo.wide img{padding:2px}.clogo.sm.wide{width:36px}
 .clogo.sm{width:20px;height:20px;border-radius:6px}.clogo.sm img{padding:1px}.clogo.sm b{font-size:.65rem}
 .thumb{aspect-ratio:1/1;max-width:100%;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line)}
 .thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
@@ -230,7 +231,10 @@ const CHAIN_SITE={"שופרסל":"shufersal.co.il","רמי לוי":"rami-levy.co
   "ויקטורי":"victoryonline.co.il","קרפור":"carrefour.co.il","חצי חינם":"hazi-hinam.co.il","פרשמרקט":"freshmarket.co.il","קינג סטור":"kingstore.co.il",
   "סופר ספיר":"supersapir.co.il","דור אלון":"doralon.co.il","סטופ מרקט":"stopmarket.co.il","מעיין 2000":"maayan2000.co.il"};
 // chain logo: the chain's own site icon, or a colored initial when there is none
-function logo(chain,cls=""){const d=CHAIN_SITE[chain],ini=esc((chain||"?").trim()[0]||"?"),bg=chainColor(chain);
+// logos the site owner supplied (site/logos), used before the website icon
+const CHAIN_LOGO={"שפע ברכת השם":"shefa","קשת טעמים":"keshet","שוק העיר":"shuk","סאלח דבאח":"dabah","פוליצר":"politzer","זול ובגדול":"zol"};
+function logo(chain,cls=""){if(CHAIN_LOGO[chain])return `<span class="clogo wide ${cls}"><img alt="" loading="lazy" src="logos/${CHAIN_LOGO[chain]}.png"></span>`;
+  const d=CHAIN_SITE[chain],ini=esc((chain||"?").trim()[0]||"?"),bg=chainColor(chain);
   return `<span class="clogo ${cls}" style="--c:${bg}">${d?`<img alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain=${d}&sz=64" onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:'${ini}'}))">`:`<b>${ini}</b>`}</span>`}
 
 
