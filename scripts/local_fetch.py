@@ -119,10 +119,38 @@ def upload(path, data, token):
     urllib.request.urlopen(req, timeout=300).read()
 
 
+# ---------- daily: the government list of price sites (gov.il refuses servers abroad) ----------
+GOV_PAGE = "https://www.gov.il/he/pages/cpfta_prices_regulations"
+
+
+def gov_links(token):
+    """Once a day: save every outside link on the government page listing the chains' price sites.
+    check_chains.py (GitHub, daily) compares it with the sites we read and reports new chains."""
+    mark = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gov_checked.txt")
+    today = dt.date.today().isoformat()
+    try:
+        if open(mark).read().strip() == today:
+            return
+    except OSError:
+        pass
+    req = urllib.request.Request(GOV_PAGE, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "he"})
+    h = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "replace")
+    links = sorted({html.unescape(u) for u in re.findall(r'href="(https?://[^"]+)"', h)
+                    if "gov.il" not in u.split("/")[2]})
+    payload = {"fetched": dt.datetime.now().isoformat(timespec="minutes"), "page_size": len(h), "links": links}
+    upload("gov-links.json.gz", gzip.compress(json.dumps(payload, ensure_ascii=False).encode()), token)
+    open(mark, "w").write(today)
+    print("gov page:", len(links), "outside links", file=sys.stderr)
+
+
 def main():
     token = os.environ.get("SAL_ZO_TOKEN")
     if not token:
         sys.exit("missing SAL_ZO_TOKEN")
+    try:
+        gov_links(token)
+    except Exception as e:
+        print("gov page check failed:", e, file=sys.stderr)
     for key, fetch in CHAINS.items():
         try:
             rows = fetch()
