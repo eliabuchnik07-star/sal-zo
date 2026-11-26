@@ -1,8 +1,8 @@
-name: בדיקת רשתות חדשות (פעם בשבועיים)
+name: בדיקת רשתות חדשות (כל יום)
 
 on:
   schedule:
-    - cron: "0 6 1,15 * *"
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -s alert.txt ]; then
+          # one open issue at a time, so a daily check doesn't flood the list
+          if [ -s alert.txt ] && [ -z "$(gh issue list --state open --search 'בדיקת רשתות in:title' --json number -q '.[].number')" ]; then
             gh issue create --title "בדיקת רשתות: יש משהו לטפל בו ($(date +%d/%m/%Y))" --body-file report.md
           fi
