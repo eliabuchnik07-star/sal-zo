@@ -362,13 +362,22 @@ function catOf(i){const t=" "+CITY.search[i];for(const c of CAT_ORDER)if(c.re.te
 let catLimit=60;
 const POPULAR=["חלב","לחם","ביצים","במבה","קוטג'","קפה","אורז","שוקולד","טונה","שמן"];
 
-function imgSrcs(code){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p.replace(/\.200\.jpg$/,".400.jpg"));
-  for(const t of EXTRA_IMG)a.push(t.replace("{code}",code));return a}
+function imgSrcs(code,name){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p.replace(/\.200\.jpg$/,".400.jpg"));
+  for(const t of EXTRA_IMG)a.push(t.replace("{code}",code));
+  if(name&&!NOT_LOOSE.test(name)){const n=" "+norm(name);for(const [re,u] of GENERIC)if(re.test(n)){a.push(GEN+u);break}}
+  return a}
+// stock photos (Unsplash license) for loose produce and fresh meat without a package photo, matched by name
+const NOT_LOOSE=/חתוכ|רסק|מרוסק|שימור|קפוא|ממרח|מיובש|משומר|רוטב|מיץ|חטיף|צ.?יפס|\d+ ?(גר|ג\b|מ"ל)/;
+const GEN="https://images.unsplash.com/",GQ="?w=400&q=70&auto=format&fit=crop";
+const GENERIC=[
+ [/^ (עגבני|עגבניה|עגבניות)/,"photo-1546094096-0df4bcaaa337"+GQ],
+ [/^ (בננה|בננות)/,"photo-1571771894821-ce9b6c11b08e"+GQ],
+ [/^ (חזה עוף|שניצל עוף|פילה עוף)/,"photo-1604503468506-a8da13d82791"+GQ]];
 // extra catalog image sources (by barcode), empty unless the site owner chooses to add one
 const EXTRA_IMG=[];
 function nextImg(el){const l=(el.dataset.alt||"").split("|").filter(Boolean);if(l.length){el.dataset.alt=l.slice(1).join("|");el.src=l[0]}
   else el.replaceWith(Object.assign(document.createElement("span"),{className:"ph",textContent:el.dataset.ph}))}
-function thumb(code,name){const l=imgSrcs(code),ph=esc((name||"?").trim()[0]||"?");
+function thumb(code,name){const l=imgSrcs(code,name),ph=esc((name||"?").trim()[0]||"?");
   return `<div class="thumb">${l.length?`<img loading="lazy" alt="" src="${l[0]}" data-alt="${l.slice(1).join("|")}" data-ph="${ph}" onerror="nextImg(this)">`:`<span class="ph">${ph}</span>`}</div>`}
 const plink=code=>"#/p/"+encodeURIComponent(code);
 
