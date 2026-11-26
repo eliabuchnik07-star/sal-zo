@@ -97,8 +97,6 @@ h2 small,h1 small{font-family:var(--body);font-weight:500;color:var(--muted);fon
 .thumb{aspect-ratio:4/3;max-width:100%;border-radius:12px;background:#fafcf9;display:grid;place-items:center;overflow:hidden}
 .thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
 .thumb .ph{font-family:var(--display);font-weight:800;font-size:2.4rem;color:#b9c7bf}
-.thumb .ph.emo{font-family:system-ui,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:4rem;line-height:1;filter:drop-shadow(0 4px 6px rgba(0,0,0,.12))}
-.bi .thumb .ph.emo{font-size:1.9rem}
 @media (prefers-color-scheme: dark){.thumb{background:#fff}}
 .pname{font-weight:700;font-size:1rem;line-height:1.3;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em;margin-top:6px}
 .pname:hover{color:var(--brand)}
@@ -368,22 +366,40 @@ function imgSrcs(code,name){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IM
   for(const t of EXTRA_IMG)a.push(t.replace("{code}",code));
   if(name&&!NOT_LOOSE.test(name)){const n=" "+norm(name);for(const [re,u] of GENERIC)if(re.test(n)){a.push(GEN+u);break}}
   return a}
-// stock photos (Unsplash license) for loose produce and fresh meat without a package photo, matched by name
-const NOT_LOOSE=/חתוכ|רסק|מרוסק|שימור|קפוא|ממרח|מיובש|משומר|רוטב|מיץ|חטיף|צ.?יפס|\d+ ?(גר|ג\b|מ"ל)/;
+// stock photos (Unsplash license) for fresh and bulk products without a package photo, matched by the start of the name
+const NOT_LOOSE=/חתוכ|רסק|מרוסק|שימור|קפוא|ממרח|מיובש|משומר|רוטב|מיץ|חטיף|צ.?יפס|במבה|גלידה|יוגורט|משקה|עוגה|עוגיות|ריבה|במלח|בחומץ|חמוץ|מוחמצ|כבוש|מטוגן|מטחון|שוקולד|מסוכר|מצופה|תפוזינה|זירו|אייס|קונפטי|\d ?מ"?ל|\d ?ל(יטר)?( |$)/;
 const GEN="https://images.unsplash.com/",GQ="?w=400&q=70&auto=format&fit=crop";
 const GENERIC=[
- [/^ (עגבני|עגבניה|עגבניות)/,"photo-1546094096-0df4bcaaa337"+GQ],
- [/^ (בננה|בננות)/,"photo-1571771894821-ce9b6c11b08e"+GQ],
- [/^ (חזה עוף|שניצל עוף|פילה עוף)/,"photo-1604503468506-a8da13d82791"+GQ]];
+ [/^ (עגבני)/,"photo-1546094096-0df4bcaaa337"+GQ],
+ [/^ (בננה|בננות)(?!וט)/,"photo-1571771894821-ce9b6c11b08e"+GQ],
+ [/^ (מלפפון)/,"photo-1462536738427-0725f3eb98f7"+GQ],
+ [/^ (תפוא|תפוחי אדמה|תפוח אדמה)/,"photo-1508313880080-c4bef0730395"+GQ],
+ [/^ (גזר)/,"photo-1571690294301-47068fd5d17b"+GQ],
+ [/^ (בצל (סגול|אדום))/,"photo-1562746713-0c512f966832"+GQ],
+ [/^ (בצל)/,"photo-1573638733072-3fb6bf850eb1"+GQ],
+ [/^ (פלפל( (אדום|צהוב|כתום|ירוק|בהיר|מתוק|רמירו|טינקרבל|מיקס|ארוז|אורגני)|$)|פלפלים (אדומים|צהובים|צבעוניים)$)/,"photo-1605800854006-85faa6220714"+GQ],
+ [/^ (תפוח(?!ונים)|תפוחי עץ)/,"photo-1501925654609-7b41cf395eb8"+GQ],
+ [/^ (תפוז(?!ינה)|קלמנטינ|מנדרינ)/,"photo-1611080626919-7cf5a9dbab5b"+GQ],
+ [/^ (לימון(?!ד))/,"photo-1567579018631-4a48bccc42e4"+GQ],
+ [/^ (אבוקדו)/,"photo-1512070904629-fa988dab2fe1"+GQ],
+ [/^ (פיסטוק)/,"photo-1635843121630-b62c46400725"+GQ],
+ [/^ (שקד(?!י מרק))/,"photo-1508779018996-601e37fa274e"+GQ],
+ [/^ (אגוז מלך|אגוזי מלך)/,"photo-1644245903028-9b184b04e59e"+GQ],
+ [/^ (תמר(ים|י| |$))/,"photo-1629738601425-494c3d6ba3e2"+GQ],
+ [/^ (חזה עוף|שניצל עוף|פילה עוף|שניצל הודו|שניצל דק)/,"photo-1604503468506-a8da13d82791"+GQ],
+ [/^ (בשר(?! עוף| הודו)|בקר|אנטריקוט|סטייק(?! פרגית| עוף| הודו| סלמון| טונה)|צלי|אסאדו|פילה בקר)/,"photo-1690983322025-aab4f95a0269"+GQ],
+ [/^ (סלמון|פילה סלמון)/,"photo-1559058789-672da06263d8"+GQ],
+ [/^ (אבטיח)/,"photo-1655558132692-7eee4e77182b"+GQ],
+ [/^ (חסה)/,"photo-1450893979860-22a2c0a0518f"+GQ],
+ [/^ (תות( |ים|$))/,"photo-1520155373246-09bc0fe76cdb"+GQ],
+ [/^ (ענב)/,"photo-1596363505729-4190a9506133"+GQ],
+ [/^ (ביצים|ביצה)/,"photo-1506976785307-8732e854ad03"+GQ],
+ [/^ (פטריות|פטריה|שמפיניון)/,"photo-1512595765784-5ebad80772a3"+GQ]];
 // extra catalog image sources (by barcode), empty unless the site owner chooses to add one
 const EXTRA_IMG=[];
 function nextImg(el){const l=(el.dataset.alt||"").split("|").filter(Boolean);if(l.length){el.dataset.alt=l.slice(1).join("|");el.src=l[0]}
   else el.replaceWith(Object.assign(document.createElement("span"),{className:el.dataset.pc||"ph",textContent:el.dataset.ph}))}
-// icon for fresh and bulk products (produce, nuts, eggs, meat, fish), shown when there is no photo
-const EMOJI=[["עגבני","🍅"],["בננ","🍌"],["מלפפון","🥒"],["קישוא","🥒"],["תפוא|תפוחי אדמה|תפוח אדמה","🥔"],["בטטה","🍠"],["תפוח|תפוחים","🍎"],["גזר","🥕"],["בצל","🧅"],["שום","🧄"],["לימון|ליים","🍋"],["תפוז|קלמנטינ|מנדרינ|אשכולי|פומלה|פומלית","🍊"],["ענב","🍇"],["אבטיח","🍉"],["מלון","🍈"],["אבוקדו","🥑"],["פלפל חריף|צ.?ילי","🌶️"],["פלפל","🫑"],["חסה|כרוב|עלי |פטרוזיליה|כוסברה|שמיר|נענע|בזיליקום|תרד|מנגולד|סלרי|רוקט","🥬"],["ברוקולי|כרובית","🥦"],["פטריות|פטריה|שמפיניון","🍄"],["תות","🍓"],["קיווי","🥝"],["אננס","🍍"],["אגס","🍐"],["אפרסק|נקטרינ|שזיף|משמש","🍑"],["מנגו","🥭"],["דובדבן","🍒"],["קוקוס","🥥"],["תירס","🌽"],["חציל","🍆"],["ביצים|ביצה","🥚"],["בוטנים|בוטן","🥜"],["פיסטוק|שקדים|שקד|אגוז|קשיו|לוז|פקאן|ערמונים|גרעינים|פיצוחים","🌰"],["תמר|צימוק|פירות יבשים|תאנים מיובשות|חמוציות","🌴"],["חזה עוף|עוף|פרגית|כרעיים|שוקיים|כנפיים|הודו","🍗"],["בקר|אנטריקוט|טחון|צלי|סטייק|אסאדו|כבש|פילה בקר","🥩"],["דג |סלמון|אמנון|דניס|לברק|מוסר|בורי|טונה טרי|פילה אמנון","🐟"]]
-  .map(([w,e])=>[new RegExp("^("+w+")"),e]);
-function emojiOf(name){const n=norm(name||"");for(const [re,e] of EMOJI)if(re.test(n))return e;return null}
-function thumb(code,name){const l=imgSrcs(code,name),e=emojiOf(name),ph=e||esc((name||"?").trim()[0]||"?"),pc=e?"ph emo":"ph";
+function thumb(code,name){const l=imgSrcs(code,name),ph=esc((name||"?").trim()[0]||"?"),pc="ph";
   return `<div class="thumb">${l.length?`<img loading="lazy" alt="" src="${l[0]}" data-alt="${l.slice(1).join("|")}" data-ph="${ph}" data-pc="${pc}" onerror="nextImg(this)">`:`<span class="${pc}">${ph}</span>`}</div>`}
 const plink=code=>"#/p/"+encodeURIComponent(code);
 
