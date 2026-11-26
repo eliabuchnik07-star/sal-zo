@@ -97,6 +97,75 @@ def parse_items(xml):
     return items
 
 
+def _num(x):
+    try:
+        return float((x or "").strip())
+    except ValueError:
+        return None
+
+
+def parse_promos(xml):
+    """PromoFull file -> {item code: (min qty, total price)}: today's promotions open to every customer.
+    Skips club-only deals, coupons, and deals that need a minimum purchase amount."""
+    today = dt.date.today().isoformat()
+    out = {}
+    for p in ET.fromstring(xml).iter():
+        if p.tag.lower() != "promotion":
+            continue
+        f = {}
+        for c in p.iter():
+            t = c.tag.lower()
+            if t not in f and (c.text or "").strip():
+                f[t] = c.text.strip()
+        club = f.get("clubid", "")
+        if club and not club.startswith("0"):
+            continue
+        start = (f.get("promotionstartdate") or f.get("promotionstartdatetime") or "")[:10]
+        end = (f.get("promotionenddate") or f.get("promotionenddatetime") or "")[:10]
+        if (start and start > today) or (end and end < today) or f.get("additionaliscoupon") == "1":
+            continue
+        if (_num(f.get("minpurchaseamnt") or f.get("minpurchaseamount")) or 0) > 0:
+            continue
+        total, qty = _num(f.get("discountedprice")), _num(f.get("minqty")) or 1
+        if not total or total <= 0 or qty < 1 or qty > 20:
+            continue
+        for c in p.iter():
+            if c.tag.lower() == "itemcode" and (c.text or "").strip().lstrip("0"):
+                code = c.text.strip().lstrip("0")
+                if code not in out or total / qty < out[code][1] / out[code][0]:
+                    out[code] = (int(qty), round(total, 2))
+    return out
+
+
+def with_promos(items, promo_data):
+    """Attach a promotion to each item it makes cheaper: items[code] gets a 6th field (qty, total)."""
+    if not promo_data:
+        return items
+    try:
+        promos = parse_promos(text(promo_data))
+    except Exception as e:
+        print("bad promo file", e, file=sys.stderr)
+        return items
+    for c, (q, t) in promos.items():
+        v = items.get(c)
+        if v and t / q < v[0] - 0.005:
+            items[c] = tuple(v[:5]) + ((q, t),)
+    return items
+
+
+def latest_files(names, stores, key=lambda f: file_store_and_stamp(f.rsplit("/", 1)[-1]), fresh=None):
+    """newest file per store: {store id: name}"""
+    best = {}
+    for f in names:
+        try:
+            sid, stamp = key(f)
+        except (IndexError, ValueError, AttributeError):
+            continue
+        if sid in stores and (fresh is None or stamp[:8] >= fresh) and (sid not in best or stamp > best[sid][0]):
+            best[sid] = (stamp, f)
+    return {sid: f for sid, (_, f) in best.items()}
+
+
 def fmt_unit(qty, unit):
     try:
         q = float(qty)
@@ -152,11 +221,14 @@ def shufersal():
         sid, stamp = str(int(m.group(1))), m.group(2)
         if sid in stores and (sid not in latest or stamp > latest[sid][0]):
             latest[sid] = (stamp, u)
-    print(f"shufersal: {len(stores)} stores in known cities, {len(latest)} price files", file=sys.stderr)
+    promo = latest_files(shufersal_links(4, "PromoFull"), stores,
+                         key=lambda u: (lambda m: (str(int(m.group(1))), m.group(2)))(re.search(r"PromoFull\d+-\d+-(\d+)-(\d+)", u)))
+    print(f"shufersal: {len(stores)} stores in known cities, {len(latest)} price files, {len(promo)} promo files", file=sys.stderr)
 
     def one(sid):
         try:
-            return sid, parse_items(text(get(latest[sid][1])))
+            items = parse_items(text(get(latest[sid][1])))
+            return sid, with_promos(items, get(promo[sid]) if sid in promo else None)
         except Exception as e:
             print("failed store", sid, e, file=sys.stderr)
             return sid, None
@@ -265,11 +337,13 @@ def cerberus(user, chain_name):
             continue
         if sid in stores and stamp[:8] >= fresh and (sid not in latest or stamp > latest[sid][0]):
             latest[sid] = (stamp, f)
-    print(f"{user}: {len(stores)} stores in known cities, {len(latest)} fresh price files", file=sys.stderr)
+    promo = latest_files(listing("PromoFull"), stores, fresh=fresh)
+    print(f"{user}: {len(stores)} stores in known cities, {len(latest)} fresh price files, {len(promo)} promo files", file=sys.stderr)
     out = []
     for sid, (_, f) in latest.items():
         try:
-            out.append((stores[sid], parse_items(text(download(f)))))
+            items = parse_items(text(download(f)))
+            out.append((stores[sid], with_promos(items, download(promo[sid]) if sid in promo else None)))
         except Exception as e:
             print("failed", user, sid, e, file=sys.stderr)
     return out
@@ -311,11 +385,13 @@ def bina(sub, chain_name):
             continue
         if sid in stores and stamp[:8] >= fresh and (sid not in latest or stamp > latest[sid][0]):
             latest[sid] = (stamp, f)
-    print(f"{sub}: {len(stores)} stores in known cities, {len(latest)} fresh price files", file=sys.stderr)
+    promo = latest_files(listing(5), stores, fresh=fresh)
+    print(f"{sub}: {len(stores)} stores in known cities, {len(latest)} fresh price files, {len(promo)} promo files", file=sys.stderr)
     out = []
     for sid, (_, f) in latest.items():
         try:
-            out.append((stores[sid], parse_items(text(download(f)))))
+            items = parse_items(text(download(f)))
+            out.append((stores[sid], with_promos(items, download(promo[sid]) if sid in promo else None)))
         except Exception as e:
             print("failed", sub, sid, e, file=sys.stderr)
     return out
@@ -348,11 +424,13 @@ def wolt():
         sid, stamp = file_store_and_stamp(u.rsplit("/", 1)[-1])
         if sid in stores and (sid not in latest or stamp > latest[sid][0]):
             latest[sid] = (stamp, u)
-    print(f"wolt: {len(stores)} stores in known cities, {len(latest)} price files", file=sys.stderr)
+    promo = latest_files([u for u in links if "/PromoFull" in u], stores)
+    print(f"wolt: {len(stores)} stores in known cities, {len(latest)} price files, {len(promo)} promo files", file=sys.stderr)
 
     def one(sid):
         try:
-            return stores[sid], parse_items(text(get(WOLT + latest[sid][1])))
+            items = parse_items(text(get(WOLT + latest[sid][1])))
+            return stores[sid], with_promos(items, get(WOLT + promo[sid]) if sid in promo else None)
         except Exception as e:
             print("failed wolt", sid, e, file=sys.stderr)
             return stores[sid], {}
@@ -382,7 +460,8 @@ def local(key):
             print(f"{key}: part {n} is from another run, skipped", file=sys.stderr)
             continue
         prods = p["products"]
-        out += [(s, {c: (price, *prods[c], last) for c, price, last in r}) for s, r in p["rows"]]
+        out += [(s, {c: (x[1], *prods[c], x[2]) + ((tuple(x[3]),) if len(x) > 3 else ()) for x in r for c in [x[0]]})
+                for s, r in p["rows"]]
     return out
 
 
@@ -414,7 +493,7 @@ def write_city(n, city, rows, today):
                 days = (today - dt.date.fromisoformat(v[4])).days
             except ValueError:
                 days = -1
-            row.append([idx[c], v[0], days])
+            row.append([idx[c], v[0], days] + ([list(v[5])] if len(v) > 5 else []))
         prices.append(row)
     with open(os.path.join(DATA, "city", f"{n}.json"), "w", encoding="utf-8") as f:
         json.dump({"city": city, "products": products, "stores": stores, "prices": prices},

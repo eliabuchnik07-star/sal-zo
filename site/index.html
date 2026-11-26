@@ -243,6 +243,7 @@ body.docked footer{padding-bottom:96px}
   .step button{width:38px;height:40px}
   .dock .btn{padding:11px 12px;font-size:.9rem}
 }
+.ppromo{color:#c2410c;font-weight:700;font-size:.8rem}
 </style>
 </head>
 <body>
@@ -424,7 +425,7 @@ async function loadCity(){
     const c2=INDEX.cities.find(x=>x.name===c.name);if(!c2){location.reload();return}
     d=await (await fetch("data/"+c2.file,{cache:"no-cache"})).json()}
   const n=d.products.length,carry=new Uint16Array(n),fresh=new Uint16Array(n),minPrice=new Float32Array(n).fill(1e9),minStore=new Int16Array(n).fill(-1);
-  const byStore=d.prices.map((row,si)=>{const m=new Map();for(const [i,p,days] of row){m.set(i,[p,days]);carry[i]++;if(days>=0&&days<=3)fresh[i]++;if(p<minPrice[i]){minPrice[i]=p;minStore[i]=si}}return m});
+  const byStore=d.prices.map((row,si)=>{const m=new Map();for(const [i,p0,days,promo] of row){const p=unitPrice([p0,days,promo]);m.set(i,[p0,days,promo]);carry[i]++;if(days>=0&&days<=3)fresh[i]++;if(p<minPrice[i]){minPrice[i]=p;minStore[i]=si}}return m});
   CITY={...d,carry,fresh,minPrice,minStore,byStore,code2i:new Map(d.products.map((p,i)=>[p[0],i])),search:d.products.map(p=>norm(p[1]+" "+p[2]+" "+p[0]))};
   CITY.cat=CITY.products.map((_,i)=>catOf(i));
   const chains=[...new Set(d.stores.map(s=>s.chain))];
@@ -494,7 +495,7 @@ function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products
     <a class="pname" href="${plink(p[0])}" title="${esc(p[1])}">${esc(p[1])}</a>
     <div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))||"&nbsp;"}</div>
     <div class="cheap">${logo(st.chain,"sm")}<span>${more>0?"הכי זול ב":"רק ב"}${esc(st.chain||"")}</span></div>
-    <div class="pp">${fmt(CITY.minPrice[i])}</div>
+    <div class="pp">${fmt(CITY.minPrice[i])}</div>${promoAt(i)?`<div class="ppromo">🏷️ ${esc(promoAt(i))}</div>`:""}
     <div class="ppn">${more>0?`נמכר בעוד ${more} סניפים`:`רק בסניף ${esc(st.name?sname(st):"")}`}</div>
     <div class="pbtns">${q?stepper(i,q):`<button class="btn" data-act="add" data-i="${i}">הוסף לסל</button>`}<a class="btn soft" href="${plink(p[0])}">השוואת מחירים</a></div>
   </article>`}).join("")}</div>`}
@@ -505,7 +506,7 @@ function renderProduct(code){
   const i=CITY.code2i.get(code);
   if(i==null){box.innerHTML=back+`<div class="hint">המוצר הזה לא נמכר באף סניף ב${esc(CITY.city)}.</div>`;return}
   const p=CITY.products[i],rows=[];
-  CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
+  CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([unitPrice(v),si,status(m,i),promoTxt(v)])});
   rows.sort((a,b)=>a[0]-b[0]);const min=rows[0][0],max=rows[rows.length-1][0];
   const one=rows.length===1?CITY.stores[rows[0][1]]:null,q=basket[code]?.q,f=favs.includes(code);
   box.innerHTML=back+`<div class="cmp">
@@ -517,9 +518,15 @@ function renderProduct(code){
     <div>
       <h2 style="margin-top:0">השוואת מחירים ב${esc(CITY.city)}</h2>
       <div class="sum">${one?`קיים רק בסניף ${esc(one.chain)} · ${esc(sname(one))}`:`נמכר ב־${rows.length} סניפים · הפרש של עד ${fmt(max-min)} בין הזול ליקר`}</div>
-      ${rows.map(([pr,si,stt])=>{const s=CITY.stores[si];return `<div class="row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}${pr===min?" 🏆":""}</b><small>${esc(sname(s))}${s.online?" · + משלוח":""}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הזול ביותר":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
+      ${rows.map(([pr,si,stt,pt])=>{const s=CITY.stores[si];return `<div class="row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}${pr===min?" 🏆":""}</b><small>${pt?`<span class="ppromo">🏷️ ${esc(pt)}</span> · `:""}${esc(sname(s))}${s.online?" · + משלוח":""}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הזול ביותר":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
     </div></div>`;
 }
+
+/* ---------- promotions: v=[price,days,[qty,total]?] ---------- */
+function unitPrice(v){const pr=v[2];return pr&&pr[0]===1?pr[1]:v[0]}
+function lineCost(v,q){const pr=v[2];if(!pr)return v[0]*q;return Math.floor(q/pr[0])*pr[1]+(q%pr[0])*v[0]}
+function promoTxt(v){const pr=v&&v[2];return pr?(pr[0]===1?`מבצע ${fmt(pr[1])} במקום ${fmt(v[0])}`:`מבצע ${pr[0]} ב־${fmt(pr[1])}`):""}
+function promoAt(i){const m=CITY.byStore[CITY.minStore[i]];return m?promoTxt(m.get(i)):""}
 
 /* ---------- basket ---------- */
 function status(m,i){const v=m.get(i);if(!v)return "none";const days=v[1];
@@ -554,7 +561,7 @@ function renderBasket(){
 function rank(){
   const codes=CITY?Object.keys(basket).filter(c=>CITY.code2i.has(c)):[];if(!codes.length)return null;
   const rows=CITY.stores.map((s,si)=>{const m=CITY.byStore[si];let total=0;const cnt={in:0,maybe:0,out:0,none:0};
-    const lines=codes.map(code=>{const i=CITY.code2i.get(code),v=m.get(i),st=status(m,i),q=basket[code].q;cnt[st]++;if(v)total+=v[0]*q;return{code,v,st,q}});
+    const lines=codes.map(code=>{const i=CITY.code2i.get(code),v=m.get(i),st=status(m,i),q=basket[code].q;cnt[st]++;if(v)total+=lineCost(v,q);return{code,v,st,q}});
     if(s.online)total+=s.online;return{s,total,cnt,lines}}).filter(r=>r.cnt.none<codes.length);
   if(!rows.length)return null;
   rows.sort((a,b)=>a.cnt.none-b.cnt.none||a.total-b.total);return{codes,rows}}
@@ -586,7 +593,7 @@ function renderStores(){
       <div class="tot"><b>${fmt(r.total)}</b><small>${note}</small></div></div>
       <div class="tags">${tags.join("")}</div>
       <details><summary>פירוט לפי מוצר</summary><table class="lines">${r.s.online?`<tr><td>🚚</td><td>דמי משלוח<small>מחיר משוער, משתנה לפי חלון הזמן ואזור המשלוח</small></td><td class="n">${fmt(r.s.online)}</td></tr>`:""}${r.lines.map(l=>{const b=basket[l.code],s=ST[l.st];
-        return `<tr><td class="${s[2]}">${s[0]}</td><td>${esc(b.name)}${l.q>1?" ×"+l.q:""}<small>${s[1]}${l.v&&l.v[1]>=0?" · נמכר לאחרונה "+(l.v[1]===0?"היום":l.v[1]===1?"אתמול":"לפני "+l.v[1]+" ימים"):""}</small></td><td class="n">${l.v?fmt(l.v[0]*l.q):""}</td></tr>`}).join("")}</table></details></div>`}).join("");
+        return `<tr><td class="${s[2]}">${s[0]}</td><td>${esc(b.name)}${l.q>1?" ×"+l.q:""}<small>${l.v&&l.v[2]?`<span class="ppromo">🏷️ ${esc(promoTxt(l.v))}</span> · `:""}${s[1]}${l.v&&l.v[1]>=0?" · נמכר לאחרונה "+(l.v[1]===0?"היום":l.v[1]===1?"אתמול":"לפני "+l.v[1]+" ימים"):""}</small></td><td class="n">${l.v?fmt(lineCost(l.v,l.q)):""}</td></tr>`}).join("")}</table></details></div>`}).join("");
   if(rows.length>8)html+=`<button class="more" data-act="showall">${showAllStores?"הצג פחות":`הצג את כל ${rows.length} הסניפים`}</button>`;
   box.innerHTML=html;
 }
