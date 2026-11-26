@@ -327,6 +327,39 @@ def make_bina(sub, name):
     return f
 
 
+# ---------- Wolt Market: one HTML page of files per day ----------
+WOLT = "https://wm-gateway.wolt.com/isr-prices/public/v1/"
+WOLT_FEE = 14.9  # estimate: Wolt's delivery fee depends on distance and order size
+
+
+def wolt():
+    links = []
+    for d in (dt.date.today(), dt.date.today() - dt.timedelta(days=1)):
+        h = get(f"{WOLT}{d.isoformat()}.html").decode("utf-8", "replace")
+        links += re.findall(r'href="(download/[^"]+)"', h)
+    st = sorted((u for u in links if "/Stores" in u), key=lambda u: re.findall(r"\d{8}-\d+", u)[-1])
+    stores = parse_stores(text(get(WOLT + st[-1])), "wolt", "וולט מרקט")
+    for s_ in stores.values():  # Wolt Market only delivers
+        s_["online"] = WOLT_FEE
+    latest = {}
+    for u in links:
+        if "/PriceFull" not in u:
+            continue
+        sid, stamp = file_store_and_stamp(u.rsplit("/", 1)[-1])
+        if sid in stores and (sid not in latest or stamp > latest[sid][0]):
+            latest[sid] = (stamp, u)
+    print(f"wolt: {len(stores)} stores in known cities, {len(latest)} price files", file=sys.stderr)
+
+    def one(sid):
+        try:
+            return stores[sid], parse_items(text(get(WOLT + latest[sid][1])))
+        except Exception as e:
+            print("failed wolt", sid, e, file=sys.stderr)
+            return stores[sid], {}
+    with ThreadPoolExecutor(8) as ex:
+        return [r for r in ex.map(one, latest) if r[1]]
+
+
 # ---------- chains fetched on a computer in Israel (scripts/local_fetch.py) ----------
 LOCAL_CHAINS = {"hazihinam": "חצי חינם", "carrefour": "קרפור", "victory": "ויקטורי", "mahsaneihashuk": "מחסני השוק",
                 "hcohen": "ח. כהן"}
@@ -359,7 +392,7 @@ def make_local(key):
     return f
 
 
-FETCHERS = [shufersal] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()] + [make_bina(u, n) for u, n in BINA_CHAINS.items()] + [make_local(k) for k in LOCAL_CHAINS]
+FETCHERS = [shufersal, wolt] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()] + [make_bina(u, n) for u, n in BINA_CHAINS.items()] + [make_local(k) for k in LOCAL_CHAINS]
 
 
 def write_city(n, city, rows, today):

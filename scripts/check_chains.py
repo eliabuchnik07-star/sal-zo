@@ -28,10 +28,9 @@ GOV_LIST = {
     "פרשמרקט": "publishedprices: freshmarket", "משנת יוסף": "ktshivuk.binaprojects.com",
     "קשת טעמים": "publishedprices: Keshet", "רמי לוי": "publishedprices: RamiLevi",
     "שופרסל": "prices.shufersal.co.il", "שוק העיר": "shuk-hayir.binaprojects.com",
-    "שפע ברכת השם": "shefabirkathashem.binaprojects.com",
+    "שפע ברכת השם": "shefabirkathashem.binaprojects.com", "וולט מרקט": "wm-gateway.wolt.com",
 }
 NOT_YET = {
-    "וולט מרקט": "wolt.com: אתר בפורמט אחר, עוד לא נבדק",
     "נתיב החסד": "app.netiv-hesed.com: אתר בפורמט אחר, עוד לא נבדק",
     "יילו / סופר יודה (פז)": "publishedprices עם סיסמה",
     "גוד פארם, סופר פארם": "פארם, לא סופרמרקט",
