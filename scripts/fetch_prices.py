@@ -303,18 +303,28 @@ def make_bina(sub, name):
 
 
 # ---------- chains fetched on a computer in Israel (scripts/local_fetch.py) ----------
-LOCAL_CHAINS = {"hazihinam": "חצי חינם"}
+LOCAL_CHAINS = {"hazihinam": "חצי חינם", "carrefour": "קרפור", "victory": "ויקטורי", "mahsaneihashuk": "מחסני השוק"}
 LOCAL_URL = "https://raw.githubusercontent.com/eliabuchnik07-star/sal-zo/local-data/{}.json.gz"
 
 
 def local(key):
     payload = json.loads(text(get(LOCAL_URL.format(key))))
     age = dt.datetime.now() - dt.datetime.fromisoformat(payload["fetched"])
-    print(f"{key}: local data from {payload['fetched']} ({len(payload['rows'])} stores)", file=sys.stderr)
+    print(f"{key}: local data from {payload['fetched']} ({payload.get('parts', 1)} parts)", file=sys.stderr)
     if age > dt.timedelta(hours=36):
         print(f"{key}: local data too old, skipped", file=sys.stderr)
         return []
-    return [(s, {c: tuple(v) for c, v in items.items()}) for s, items in payload["rows"]]
+    if payload.get("v") != 2:  # old format: full item tuples per store
+        return [(s, {c: tuple(v) for c, v in items.items()}) for s, items in payload["rows"]]
+    out = []
+    for n in range(payload["parts"]):
+        p = payload if n == 0 else json.loads(text(get(LOCAL_URL.format(f"{key}.{n}"))))
+        if p["fetched"] != payload["fetched"]:
+            print(f"{key}: part {n} is from another run, skipped", file=sys.stderr)
+            continue
+        prods = p["products"]
+        out += [(s, {c: (price, *prods[c], last) for c, price, last in r}) for s, r in p["rows"]]
+    return out
 
 
 def make_local(key):

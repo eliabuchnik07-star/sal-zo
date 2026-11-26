@@ -1,6 +1,7 @@
 """Runs on a computer in Israel, for chains whose price sites refuse servers abroad.
 
-Every run: downloads the newest full price file of every branch of these chains, and uploads
+Every run: downloads the newest full price file of every branch of these chains
+(Hatzi Hinam, Carrefour, and the laibcatalog chains: Victory, Machsanei HaShuk), and uploads
 one compact file per chain to the `local-data` branch of the repository. The hourly GitHub job
 (fetch_prices.py) reads those files and merges them into the site.
 
@@ -15,6 +16,7 @@ import fetch_prices as fp
 
 REPO = "eliabuchnik07-star/sal-zo"
 BRANCH = "local-data"
+PART = 40  # stores per uploaded file
 
 
 # ---------- Hatzi Hinam ----------
@@ -48,7 +50,57 @@ def hazi_hinam():
     return [(stores[sid], fp.parse_items(fp.text(fp.get(u)))) for sid, (_, u) in latest.items()]
 
 
-CHAINS = {"hazihinam": hazi_hinam}
+# ---------- Carrefour (and Yeinot Bitan) ----------
+def carrefour():
+    base = "https://prices.carrefour.co.il"
+    h = fp.get(base + "/").decode("utf-8", "replace")
+    path = re.search(r"const path = '(\d+)'", h).group(1)
+    files = [f["name"] for f in json.loads(re.search(r"const files = (\[.*?\]);", h, re.S).group(1))]
+    stores_files = sorted(f for f in files if f.startswith("Stores"))
+    if not stores_files:
+        raise RuntimeError("no stores file on Carrefour site")
+    stores = fp.parse_stores(fp.text(fp.get(f"{base}/{path}/{stores_files[-1]}")), "carrefour", "קרפור")
+    latest = {}
+    for name in files:
+        if not name.startswith("PriceFull"):
+            continue
+        sid, stamp = fp.file_store_and_stamp(name)
+        if sid in stores and (sid not in latest or stamp > latest[sid][0]):
+            latest[sid] = (stamp, name)
+    print(f"carrefour: {len(stores)} stores, {len(latest)} price files", file=sys.stderr)
+    return [(stores[sid], fp.parse_items(fp.text(fp.get(f"{base}/{path}/{n}")))) for sid, (_, n) in latest.items()]
+
+
+# ---------- laibcatalog.co.il (Victory, Machsanei HaShuk, H. Cohen) ----------
+def laib_store_and_stamp(name):
+    nums = re.findall(r"\d+", name.split(".")[0])
+    i = next(k for k, n in enumerate(nums) if len(n) >= 12 and k > 0)
+    return str(int(nums[i - 1])), nums[i][:12]
+
+
+def laib(chain_id, key, chain_name):
+    base = "https://laibcatalog.co.il/"
+
+    def links(ftype):
+        h = fp.get(f"{base}NBCompetitionRegulations.aspx?code={chain_id}&fileType={ftype}").decode("utf-8", "replace")
+        return [html.unescape(u).replace("\\", "/") for u in re.findall(r'href="(CompetitionRegulationsFiles[^"]+)"', h)]
+
+    st = sorted(links("storesfull"), key=lambda u: laib_store_and_stamp(u.rsplit("/", 1)[-1])[1])
+    if not st:
+        raise RuntimeError(f"{key}: no files published on laibcatalog right now")
+    stores = fp.parse_stores(fp.text(fp.get(base + st[-1])), key, chain_name)
+    latest = {}
+    for u in links("pricefull"):
+        sid, stamp = laib_store_and_stamp(u.rsplit("/", 1)[-1])
+        if sid in stores and (sid not in latest or stamp > latest[sid][0]):
+            latest[sid] = (stamp, u)
+    print(f"{key}: {len(stores)} stores, {len(latest)} price files", file=sys.stderr)
+    return [(stores[sid], fp.parse_items(fp.text(fp.get(base + u)))) for sid, (_, u) in latest.items()]
+
+
+CHAINS = {"hazihinam": hazi_hinam, "carrefour": carrefour,
+          "victory": lambda: laib("7290696200003", "victory", "ויקטורי"),
+          "mahsaneihashuk": lambda: laib("7290661400001", "mahsaneihashuk", "מחסני השוק")}
 
 
 def upload(path, data, token):
@@ -77,9 +129,22 @@ def main():
         except Exception as e:
             print("failed", key, e, file=sys.stderr)
             continue
-        payload = {"fetched": dt.datetime.now().isoformat(timespec="minutes"),
-                   "rows": [[s, {c: list(v) for c, v in items.items()}] for s, items in rows]}
-        upload(f"{key}.json.gz", gzip.compress(json.dumps(payload, ensure_ascii=False).encode()), token)
+        # shared product table + per-store prices, split into parts of PART stores (keeps each upload small)
+        products, srows = {}, []
+        for st, items in rows:
+            r = []
+            for c, v in items.items():
+                products.setdefault(c, list(v[1:4]))
+                r.append([c, v[0], v[4]])
+            srows.append([st, r])
+        parts = [srows[i:i + PART] for i in range(0, len(srows), PART)] or [[]]
+        fetched = dt.datetime.now().isoformat(timespec="minutes")
+        for n, chunk in enumerate(parts):
+            used = {c for _, r in chunk for c, _, _ in r}
+            payload = {"v": 2, "fetched": fetched, "part": n, "parts": len(parts),
+                       "products": {c: products[c] for c in used}, "rows": chunk}
+            name = f"{key}.json.gz" if n == 0 else f"{key}.{n}.json.gz"
+            upload(name, gzip.compress(json.dumps(payload, ensure_ascii=False).encode()), token)
         print("uploaded", key, len(rows), "stores", file=sys.stderr)
 
 
