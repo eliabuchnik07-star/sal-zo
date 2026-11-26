@@ -37,6 +37,16 @@ CITY = {
 
 UNKNOWN = {}  # city codes we have no name for (printed for maintenance)
 
+# Online stores (StoreType 2 in the store files). They get a delivery fee added to the basket total.
+ONLINE_RE = re.compile(r"אונליין|און ?- ?ליין|ONLINE|אינטרנט|ליקוט", re.I)
+DELIVERY_FEE = 35.9  # most chains charge 35.90 for a supermarket delivery (TheMarker, July 2026)
+# online stores that deliver to most of the country: shown in every city
+NATIONAL_ONLINE = {"shufersal-413", "ramilevi-39"}
+
+
+def is_online(store_type, name):
+    return store_type.strip() == "2" and bool(ONLINE_RE.search(name))
+
 
 def get(url, tries=4):
     for i in range(tries):
@@ -50,6 +60,10 @@ def get(url, tries=4):
 
 
 def text(data):
+    if data[:2] == b"PK":  # some files are zip archives despite the .gz name
+        import io, zipfile
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            data = z.read(z.namelist()[0])
     try:
         data = gzip.decompress(data)
     except OSError:
@@ -119,13 +133,18 @@ def shufersal():
             continue
         for s in sub.iter("Store"):
             city = (s.findtext("City") or "").strip()
+            sid = str(int(s.findtext("StoreID")))
+            name = (s.findtext("StoreName") or "").strip()
+            online = is_online(s.findtext("StoreType") or "", name)
+            if online and "shufersal-" + sid in NATIONAL_ONLINE:
+                city = next(iter(CITY))
             if city not in CITY:
                 UNKNOWN.setdefault(city, (s.findtext("StoreName") or "") + " / שופרסל")
                 continue
-            sid = str(int(s.findtext("StoreID")))
-            stores[sid] = {"id": "shufersal-" + sid, "chain": "שופרסל", "sub": subname,
-                           "name": (s.findtext("StoreName") or "").strip(),
+            stores[sid] = {"id": "shufersal-" + sid, "chain": "שופרסל", "sub": subname, "name": name,
                            "address": (s.findtext("Address") or "").strip(), "city": CITY[city]}
+            if online:
+                stores[sid]["online"] = DELIVERY_FEE
     # newest PriceFull file per store
     latest = {}
     for u in shufersal_links(2, "PriceFull"):
@@ -215,14 +234,19 @@ def parse_stores(xml, chain_key, chain_name):
             continue
         g = lambda t: next((c.text or "" for c in s if c.tag.lower() == t.lower()), "").strip()
         city = g("City")
+        sid = str(int(g("StoreID") or 0))
+        online = is_online(g("StoreType"), g("StoreName"))
+        if online and f"{chain_key}-{sid}" in NATIONAL_ONLINE:
+            city = next(iter(CITY))
         if city not in CITY:
             city = guess_city(g("StoreName") + " " + g("Address"))
         if city not in CITY:
             UNKNOWN.setdefault(city, g("StoreName") + " / " + chain_name)
             continue
-        sid = str(int(g("StoreID") or 0))
         stores[sid] = {"id": f"{chain_key}-{sid}", "chain": chain_name, "sub": "", "name": g("StoreName"),
                        "address": g("Address"), "city": CITY[city]}
+        if online:
+            stores[sid]["online"] = DELIVERY_FEE
     return stores
 
 
@@ -348,7 +372,7 @@ def write_city(n, city, rows, today):
     products = [[c, codes[c][1], codes[c][2], codes[c][3]] for c in code_list]
     stores, prices = [], []
     for s, items in rows:
-        stores.append({k: s[k] for k in ("id", "chain", "sub", "name", "address")})
+        stores.append({k: s[k] for k in ("id", "chain", "sub", "name", "address", "online") if k in s})
         row = []
         for c, v in items.items():
             try:
@@ -379,8 +403,12 @@ def main():
         sys.exit("no data fetched")
     rows = [(s, items) for s, items in rows if len(items) >= 300]  # skip kiosks / broken files
     by_city = {}
+    national = [(s, items) for s, items in rows if s["id"] in NATIONAL_ONLINE]
     for s, items in rows:
-        by_city.setdefault(s["city"], []).append((s, items))
+        if s["id"] not in NATIONAL_ONLINE:
+            by_city.setdefault(s["city"], []).append((s, items))
+    for city in by_city:  # nationwide online stores compete in every city that has physical stores
+        by_city[city] += national
     today = dt.date.today()
     cities = []
     # stable file name per city (its CBS code), so an open page never loads another city's file
