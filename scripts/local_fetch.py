@@ -146,6 +146,15 @@ def main():
             name = f"{key}.json.gz" if n == 0 else f"{key}.{n}.json.gz"
             upload(name, gzip.compress(json.dumps(payload, ensure_ascii=False).encode()), token)
         print("uploaded", key, len(rows), "stores", file=sys.stderr)
+    # ask GitHub to rebuild the site now (GitHub's own hourly timer is unreliable)
+    try:
+        req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/dispatches",
+                                     json.dumps({"event_type": "local-prices"}).encode(), method="POST",
+                                     headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json", **fp.UA})
+        urllib.request.urlopen(req, timeout=60).read()
+        print("asked GitHub to update the site", file=sys.stderr)
+    except Exception as e:
+        print("could not trigger site update:", e, file=sys.stderr)
 
 
 if __name__ == "__main__":
