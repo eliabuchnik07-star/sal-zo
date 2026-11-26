@@ -247,6 +247,7 @@ const CHAIN_SITE={"שופרסל":"shufersal.co.il","רמי לוי":"rami-levy.co
 // chain logo: the chain's own site icon, or a colored initial when there is none
 // logos the site owner supplied (site/logos), used before the website icon
 const CHAIN_LOGO={"שפע ברכת השם":"shefa","קשת טעמים":"keshet","שוק העיר":"shuk","סאלח דבאח":"dabah","פוליצר":"politzer","זול ובגדול":"zol"};
+function sname(s){return s.online?"קנייה אונליין":s.name}
 function logo(chain,cls=""){if(CHAIN_LOGO[chain])return `<span class="clogo wide ${cls}"><img alt="" loading="lazy" src="logos/${CHAIN_LOGO[chain]}.png"></span>`;
   const d=CHAIN_SITE[chain],ini=esc((chain||"?").trim()[0]||"?"),bg=chainColor(chain);
   return `<span class="clogo ${cls}" style="--c:${bg}">${d?`<img alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain=${d}&sz=64" onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:'${ini}'}))">`:`<b>${ini}</b>`}</span>`}
@@ -351,15 +352,15 @@ function showProducts(){
 }
 function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products[i],q=basket[p[0]]?.q;
   return `<article class="prod" data-i="${i}">${thumb(p[0],p[1])}<div><div class="pname" title="${esc(p[1])}">${esc(p[1])}</div><div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))}</div></div>
-  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap">${logo(st.chain,"sm")}${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name||"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
+  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap">${logo(st.chain,"sm")}${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name?sname(st):"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
 
 function detail(i){const p=CITY.products[i],rows=[];
   CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
   rows.sort((a,b)=>a[0]-b[0]);const min=rows.length?rows[0][0]:0;
   const one=rows.length===1?CITY.stores[rows[0][1]]:null;
   $("pd").innerHTML=`<div class="pd-head">${thumb(p[0],p[1])}<div><h3>${esc(p[1])}</h3><p>${esc([p[2],p[3]].filter(Boolean).join(" · "))}</p></div><button class="pd-x" aria-label="סגור">✕</button></div>
-  ${one?`<div class="pd-only">קיים רק בסניף ${esc(one.chain)} · ${esc(one.name)}</div>`:`<div class="pd-only">נמכר ב־${rows.length} סניפים ב${esc(CITY.city)} · הכי זול ב${esc(CITY.stores[rows[0][1]].chain)}</div>`}
-  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}</b><small>${esc(s.name)}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
+  ${one?`<div class="pd-only">קיים רק בסניף ${esc(one.chain)} · ${esc(sname(one))}</div>`:`<div class="pd-only">נמכר ב־${rows.length} סניפים ב${esc(CITY.city)} · הכי זול ב${esc(CITY.stores[rows[0][1]].chain)}</div>`}
+  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}</b><small>${esc(sname(s))}${s.online?" · + משלוח":""}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
   <button class="pd-add">הוסף לסל</button>`;
   $("pdback").classList.add("on");
   $("pd").querySelector(".pd-x").onclick=closeDetail;$("pd").querySelector(".pd-add").onclick=()=>{add(i);closeDetail()}}
@@ -378,7 +379,7 @@ function renderBasket(){
   ul.innerHTML="";
   codes.forEach(code=>{const b=basket[code];const li=document.createElement("li");li.className="bi";
     const inCity=CITY&&CITY.code2i.has(code);
-    li.innerHTML=`${thumb(code,b.name)}<div class="nm">${esc(b.name)}<small>${esc(b.unit||"")}${CITY&&!inCity?" · לא נמכר באף סניף בעיר":""}</small>${(()=>{const o=onlyStore(code);return o?`<small class="only">נמכר רק ב${esc(o.chain)} · ${esc(o.name)}</small>`:""})()}</div>
+    li.innerHTML=`${thumb(code,b.name)}<div class="nm">${esc(b.name)}<small>${esc(b.unit||"")}${CITY&&!inCity?" · לא נמכר באף סניף בעיר":""}</small>${(()=>{const o=onlyStore(code);return o?`<small class="only">נמכר רק ב${esc(o.chain)} · ${esc(sname(o))}</small>`:""})()}</div>
       <div class="qty"><button aria-label="הוסף">+</button><span>${b.q}</span><button aria-label="הפחת">−</button></div>`;
     const [plus,minus]=li.querySelectorAll(".qty button");
     plus.onclick=()=>{b.q++;save();showProducts()};
@@ -393,14 +394,14 @@ function renderStores(){
   $("rtitle").textContent=`איפה הכי זול ב${CITY.city}`;
   const rows=CITY.stores.map((s,si)=>{const m=CITY.byStore[si];let total=0;const cnt={in:0,maybe:0,out:0,none:0};
     const lines=codes.map(code=>{const i=CITY.code2i.get(code),v=m.get(i),st=status(m,i),q=basket[code].q;cnt[st]++;if(v)total+=v[0]*q;return{code,v,st,q}});
-    return{s,total,cnt,lines}}).filter(r=>r.cnt.none<codes.length);
+    if(s.online)total+=s.online;return{s,total,cnt,lines}}).filter(r=>r.cnt.none<codes.length);
   rows.sort((a,b)=>a.cnt.none-b.cnt.none||a.total-b.total);
   const best=rows[0],full=rows.filter(r=>r.cnt.none===best.cnt.none),worst=full[full.length-1];
   const shown=showAllStores?rows:rows.slice(0,8);
   box.innerHTML="";
   const only=codes.map(c=>[c,onlyStore(c)]).filter(x=>x[1]);
   if(only.length){const n=document.createElement("div");n.className="onlybox";
-    n.innerHTML=`<b>שימו לב:</b>${only.map(([c,o])=>`<div>${esc(basket[c].name)} נמכר רק ב${esc(o.chain)} · ${esc(o.name)}</div>`).join("")}`;box.appendChild(n)}
+    n.innerHTML=`<b>שימו לב:</b>${only.map(([c,o])=>`<div>${esc(basket[c].name)} נמכר רק ב${esc(o.chain)} · ${esc(sname(o))}</div>`).join("")}`;box.appendChild(n)}
   shown.forEach((r,k)=>{const d=document.createElement("div");d.className="st"+(k===0?" best":"");if(k===0)d.id="beststore";
     const tags=[];
     if(r.cnt.none)tags.push(`<span class="tag r">${r.cnt.none} לא נמכרים בסניף</span>`);
@@ -410,14 +411,14 @@ function renderStores(){
     const same=r.cnt.none===best.cnt.none;
     const note=k===0?(worst!==best?`חוסכים ${fmt(worst.total-best.total)}`:"הכי זול"):same?`+${fmt(r.total-best.total)}`:"חסרים מוצרים";
     d.innerHTML=`<div class="row"><span class="badge" style="background:${chainColor(r.s.chain)}">${k+1}</span>${logo(r.s.chain)}
-      <div class="who"><b>${esc(r.s.chain)} · ${esc(r.s.name)}</b><small>${esc(r.s.address||r.s.sub||"")}</small></div>
+      <div class="who"><b>${esc(r.s.chain)} · ${esc(sname(r.s))}</b><small>${r.s.online?`🚚 כולל משלוח ${fmt(r.s.online)}`:esc(r.s.address||r.s.sub||"")}</small></div>
       <div class="price"><b>${fmt(r.total)}</b><small>${note}</small></div></div>
       <div class="tags">${tags.join("")}</div>
-      <details><summary>פירוט לפי מוצר</summary><table class="lines">${r.lines.map(l=>{const b=basket[l.code],s=ST[l.st];
+      <details><summary>פירוט לפי מוצר</summary><table class="lines">${r.s.online?`<tr><td>🚚</td><td>דמי משלוח<small>מחיר משוער, משתנה לפי חלון הזמן ואזור המשלוח</small></td><td class="n">${fmt(r.s.online)}</td></tr>`:""}${r.lines.map(l=>{const b=basket[l.code],s=ST[l.st];
         return `<tr><td class="${s[2]}">${s[0]}</td><td>${esc(b.name)}${l.q>1?" ×"+l.q:""}<small>${s[1]}${l.v&&l.v[1]>=0?" · נמכר לאחרונה "+(l.v[1]===0?"היום":l.v[1]===1?"אתמול":"לפני "+l.v[1]+" ימים"):""}</small></td><td class="n">${l.v?fmt(l.v[0]*l.q):""}</td></tr>`}).join("")}</table></details>`;
     box.appendChild(d)});
   if(rows.length>8){const b=document.createElement("button");b.className="more";b.textContent=showAllStores?"הצג פחות":`הצג את כל ${rows.length} הסניפים`;b.onclick=()=>{showAllStores=!showAllStores;renderStores()};box.appendChild(b)}
-  $("docktxt").innerHTML=`הכי זול: <b>${fmt(best.total)}</b><br>${esc(best.s.chain)} · ${esc(best.s.name)}`;
+  $("docktxt").innerHTML=`הכי זול: <b>${fmt(best.total)}</b><br>${esc(best.s.chain)} · ${esc(sname(best.s))}`;
   dock.classList.add("on");
 }
 function render(){renderBasket();renderStores()}
