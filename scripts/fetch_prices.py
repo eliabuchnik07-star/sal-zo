@@ -283,7 +283,8 @@ def make_cerberus(user, name):
 
 # ---------- binaprojects.com portals (King Store, Maayan 2000, Zol Vebegadol, ...) ----------
 BINA_CHAINS = {"kingstore": "קינג סטור", "maayan2000": "מעיין 2000", "zolvebegadol": "זול ובגדול",
-               "shefabirkathashem": "שפע ברכת השם", "supersapir": "סופר ספיר", "shuk-hayir": "שוק העיר"}
+               "shefabirkathashem": "שפע ברכת השם", "supersapir": "סופר ספיר", "shuk-hayir": "שוק העיר",
+               "superbareket": "סופר ברקת", "citymarketkiryatgat": "סיטי מרקט", "ktshivuk": "משנת יוסף"}
 
 
 def bina(sub, chain_name):
@@ -327,7 +328,8 @@ def make_bina(sub, name):
 
 
 # ---------- chains fetched on a computer in Israel (scripts/local_fetch.py) ----------
-LOCAL_CHAINS = {"hazihinam": "חצי חינם", "carrefour": "קרפור", "victory": "ויקטורי", "mahsaneihashuk": "מחסני השוק"}
+LOCAL_CHAINS = {"hazihinam": "חצי חינם", "carrefour": "קרפור", "victory": "ויקטורי", "mahsaneihashuk": "מחסני השוק",
+                "hcohen": "ח. כהן"}
 LOCAL_URL = "https://raw.githubusercontent.com/eliabuchnik07-star/sal-zo/local-data/{}.json.gz"
 
 
@@ -418,7 +420,10 @@ def main():
         count = write_city(n, city, by_city[city], today)
         cities.append({"name": city, "file": f"city/{n}.json", "stores": len(by_city[city]), "products": count})
     with open(os.path.join(DATA, "index.json"), "w", encoding="utf-8") as f:
-        json.dump({"updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"), "cities": cities},
+        chains = {}
+        for s, _ in rows:  # branches per chain, checked daily by check_chains.py
+            chains[s["chain"]] = chains.get(s["chain"], 0) + 1
+        json.dump({"updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"), "cities": cities, "chains": chains},
                   f, ensure_ascii=False, indent=1)
     print("unknown city codes:", json.dumps(UNKNOWN, ensure_ascii=False), file=sys.stderr)
     print(f"wrote {len(cities)} cities from {len(rows)} stores", file=sys.stderr)
