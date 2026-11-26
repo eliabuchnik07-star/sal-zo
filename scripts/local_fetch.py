@@ -46,8 +46,10 @@ def hazi_hinam():
         sid, stamp = fp.file_store_and_stamp(name)
         if sid in stores and (sid not in latest or stamp > latest[sid][0]):
             latest[sid] = (stamp, u)
-    print(f"hazi hinam: {len(stores)} stores, {len(latest)} price files", file=sys.stderr)
-    return [(stores[sid], fp.parse_items(fp.text(fp.get(u)))) for sid, (_, u) in latest.items()]
+    promo = fp.latest_files([u for u in links if u.rsplit("/", 1)[-1].startswith("PromoFull")], stores)
+    print(f"hazi hinam: {len(stores)} stores, {len(latest)} price files, {len(promo)} promo files", file=sys.stderr)
+    return [(stores[sid], fp.with_promos(fp.parse_items(fp.text(fp.get(u))), fp.get(promo[sid]) if sid in promo else None))
+            for sid, (_, u) in latest.items()]
 
 
 # ---------- Carrefour (and Yeinot Bitan) ----------
@@ -67,8 +69,11 @@ def carrefour():
         sid, stamp = fp.file_store_and_stamp(name)
         if sid in stores and (sid not in latest or stamp > latest[sid][0]):
             latest[sid] = (stamp, name)
-    print(f"carrefour: {len(stores)} stores, {len(latest)} price files", file=sys.stderr)
-    return [(stores[sid], fp.parse_items(fp.text(fp.get(f"{base}/{path}/{n}")))) for sid, (_, n) in latest.items()]
+    promo = fp.latest_files([f for f in files if f.startswith("PromoFull")], stores)
+    print(f"carrefour: {len(stores)} stores, {len(latest)} price files, {len(promo)} promo files", file=sys.stderr)
+    get = lambda n: fp.get(f"{base}/{path}/{n}")
+    return [(stores[sid], fp.with_promos(fp.parse_items(fp.text(get(n))), get(promo[sid]) if sid in promo else None))
+            for sid, (_, n) in latest.items()]
 
 
 # ---------- laibcatalog.co.il (Victory, Machsanei HaShuk, H. Cohen) ----------
@@ -85,8 +90,15 @@ def laib(chain_id, key, chain_name):
         sid = str(int(f["branchNumber"]))
         if f["fileType"] == "pricefull" and sid in stores and (sid not in latest or f["fileDate"] > latest[sid]["fileDate"]):
             latest[sid] = f
-    print(f"{key}: {len(stores)} stores, {len(latest)} price files", file=sys.stderr)
-    return [(stores[sid], fp.parse_items(fp.text(fp.get(f"{base}{chain_id}/{f['fileName']}")))) for sid, f in latest.items()]
+    promo = {}
+    for f in files:
+        sid = str(int(f["branchNumber"]))
+        if f["fileType"] == "promofull" and sid in stores and (sid not in promo or f["fileDate"] > promo[sid]["fileDate"]):
+            promo[sid] = f
+    print(f"{key}: {len(stores)} stores, {len(latest)} price files, {len(promo)} promo files", file=sys.stderr)
+    get = lambda f: fp.get(f"{base}{chain_id}/{f['fileName']}")
+    return [(stores[sid], fp.with_promos(fp.parse_items(fp.text(get(f))), get(promo[sid]) if sid in promo else None))
+            for sid, f in latest.items()]
 
 
 CHAINS = {"hazihinam": hazi_hinam, "carrefour": carrefour,
@@ -127,12 +139,12 @@ def main():
             r = []
             for c, v in items.items():
                 products.setdefault(c, list(v[1:4]))
-                r.append([c, v[0], v[4]])
+                r.append([c, v[0], v[4]] + ([list(v[5])] if len(v) > 5 else []))
             srows.append([st, r])
         parts = [srows[i:i + PART] for i in range(0, len(srows), PART)] or [[]]
         fetched = dt.datetime.now().isoformat(timespec="minutes")
         for n, chunk in enumerate(parts):
-            used = {c for _, r in chunk for c, _, _ in r}
+            used = {x[0] for _, r in chunk for x in r}
             payload = {"v": 2, "fetched": fetched, "part": n, "parts": len(parts),
                        "products": {c: products[c] for c in used}, "rows": chunk}
             name = f"{key}.json.gz" if n == 0 else f"{key}.{n}.json.gz"
