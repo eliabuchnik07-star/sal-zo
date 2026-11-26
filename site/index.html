@@ -161,6 +161,20 @@ details:not([open]) summary::before{content:"◂ "}
 .loading{display:flex;align-items:center;gap:10px;color:var(--muted)}
 .spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand-2);animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+/* phones */
+@media (max-width:600px){
+  .bar{padding-block:8px}.logo{font-size:1.2rem}.logo svg{width:24px;height:24px}
+  .search{padding-bottom:8px}.sbox input{padding:11px 0;font-size:1rem}
+  .meta{font-size:.75rem;padding-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pfoot{flex-wrap:wrap}.pfoot .from{flex:1 1 100%}
+  .pfoot .add{width:100%;height:38px;font-size:1.2rem}.pfoot .add.in{width:100%}
+  .cat{min-width:74px;padding:8px 6px;font-size:.75rem}.cat span{font-size:1.3rem}
+  .dock .gut{gap:8px}.dock button{padding:11px 12px;font-size:.9rem}
+  .dock button.alt{background:var(--brand-soft);color:var(--brand-2)}
+  #basketSec{scroll-margin-top:150px}
+}
+@media (min-width:601px){.dock button.alt{display:none}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
 </style>
 </head>
@@ -216,7 +230,7 @@ details:not([open]) summary::before{content:"◂ "}
 <div class="pd-back" id="pdback"><div class="pd" id="pd" role="dialog" aria-modal="true"></div></div>
 </div>
 
-<div class="dock" id="dock"><div class="gut"><div class="txt" id="docktxt"></div><button id="dockbtn">לסניף הכי זול</button></div></div>
+<div class="dock" id="dock"><div class="gut"><div class="txt" id="docktxt"></div><button id="dockbasket" class="alt">הסל שלי</button><button id="dockbtn">לסניף הכי זול</button></div></div>
 
 <script>
 const IMG="https://images.openfoodfacts.org/images/products/";
@@ -412,6 +426,7 @@ let timer;$("q").oninput=()=>{clearTimeout(timer);timer=setTimeout(showProducts,
 $("q").onkeydown=e=>{if(e.key==="Enter")$("q").blur()};
 $("sample").onclick=()=>{if(CITY){loadSample();save();showProducts()}};
 $("clear").onclick=()=>{basket={};save();showProducts()};
+$("dockbasket").onclick=()=>$("basketSec").scrollIntoView({behavior:"smooth",block:"start"});
 $("dockbtn").onclick=()=>document.getElementById("beststore")?.scrollIntoView({behavior:"smooth",block:"center"});
 boot();
 </script>
