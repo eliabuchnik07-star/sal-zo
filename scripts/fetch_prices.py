@@ -9,6 +9,12 @@ import urllib.request, urllib.parse, http.cookiejar
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:  # the computer in Israel downloads only this file and local_fetch.py, and needs neither
+    import categorize, quality
+except ImportError:
+    categorize = quality = None
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "site", "data")
 UA = {"User-Agent": "Mozilla/5.0 (basket-compare)"}
@@ -474,13 +480,21 @@ def make_local(key):
 FETCHERS = [shufersal, wolt] + [make_cerberus(u, n) for u, n in CERB_CHAINS.items()] + [make_bina(u, n) for u, n in BINA_CHAINS.items()] + [make_local(k) for k in LOCAL_CHAINS]
 
 
-def write_city(n, city, rows, today):
+def write_city(n, city, rows, today, cats=None, report=None):
     """rows: list of (store, items). Products: only barcodes that exist in this city."""
-    codes = {}
-    for _, items in rows:
+    codes, keyed = {}, []
+    for s, items in rows:
+        k = {}
         for c, v in items.items():
-            if c not in codes:
-                codes[c] = v
+            key = c
+            if quality and quality.is_internal(c) and c in codes and not quality.same_product(codes[c][1], v[1]):
+                # chains' own short codes collide: 2009 is brisket at one chain and bananas at another
+                key = s["id"].split("-")[0] + "." + c
+            k[key] = v
+            if key not in codes:
+                codes[key] = v
+        keyed.append(k)
+    rows = [(s, k) for (s, _), k in zip(rows, keyed)]
     code_list = sorted(codes)
     idx = {c: i for i, c in enumerate(code_list)}
     products = [[c, codes[c][1], codes[c][2], codes[c][3]] for c in code_list]
@@ -495,6 +509,10 @@ def write_city(n, city, rows, today):
                 days = -1
             row.append([idx[c], v[0], days] + ([list(v[5])] if len(v) > 5 else []))
         prices.append(row)
+    # quality checker: one category per product, red-flag removal, duplicate merge (scripts/quality.py)
+    products, prices, found = quality.fix_city(products, prices, cats or {})
+    if report is not None:
+        report[city] = {k: {"count": len(v), "examples": v[:30]} for k, v in found.items()}
     with open(os.path.join(DATA, "city", f"{n}.json"), "w", encoding="utf-8") as f:
         json.dump({"city": city, "products": products, "stores": stores, "prices": prices},
                   f, ensure_ascii=False, separators=(",", ":"))
@@ -524,12 +542,18 @@ def main():
     for city in by_city:  # nationwide online stores compete in every city that has physical stores
         by_city[city] += national
     today = dt.date.today()
+    names = {}
+    for _, items in rows:
+        for c, v in items.items():
+            names.setdefault(c, set()).add((v[1], v[2]))
+    cats = categorize.assign(names)
+    report = {}
     cities = []
     # stable file name per city (its CBS code), so an open page never loads another city's file
     code_of = {name: code for code, name in CITY.items()}
     for city in sorted(by_city):
         n = code_of[city]
-        count = write_city(n, city, by_city[city], today)
+        count = write_city(n, city, by_city[city], today, cats, report)
         cities.append({"name": city, "file": f"city/{n}.json", "stores": len(by_city[city]), "products": count})
     with open(os.path.join(DATA, "index.json"), "w", encoding="utf-8") as f:
         chains = {}
@@ -537,6 +561,12 @@ def main():
             chains[s["chain"]] = chains.get(s["chain"], 0) + 1
         json.dump({"updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"), "cities": cities, "chains": chains},
                   f, ensure_ascii=False, indent=1)
+    with open(os.path.join(DATA, "quality.json"), "w", encoding="utf-8") as f:
+        summary = {k: sum(r[k]["count"] for r in report.values()) for k in next(iter(report.values()), {})}
+        json.dump({"updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"), "summary": summary,
+                   "categories": {cid: sum(1 for v in cats.values() if v == cid) for cid in categorize.CAT_IDS},
+                   "cities": report}, f, ensure_ascii=False, separators=(",", ":"))
+    print("quality:", json.dumps(summary, ensure_ascii=False), file=sys.stderr)
     print("unknown city codes:", json.dumps(UNKNOWN, ensure_ascii=False), file=sys.stderr)
     print(f"wrote {len(cities)} cities from {len(rows)} stores", file=sys.stderr)
 

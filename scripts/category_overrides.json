@@ -1,0 +1,4 @@
+{
+  "_": "תיקונים ידניים לקטגוריה לפי ברקוד. ערכים: fruit dairy meat deli bread pantry snacks drinks frozen home care, או null כדי להוציא מוצר מכל הקטגוריות. Manual category fixes by barcode; they win over the automatic classifier.",
+  "_example_7290000000000": "fruit"
+}

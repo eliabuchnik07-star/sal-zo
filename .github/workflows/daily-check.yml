@@ -1,0 +1,38 @@
+name: בודק איכות יומי
+
+# Once a day: goes over every city on the live site and looks for products in the wrong category,
+# the same product at several prices in one branch, odd prices and branches with old data.
+# The report goes to the run's summary and to one open issue in the repository ("דוח בודק האיכות").
+# The hourly update (update.yml) already fixes categories and duplicates on every run (scripts/quality.py).
+
+on:
+  schedule:
+    - cron: "30 4 * * *"   # 06:30-07:30 Israel time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: סיבוב בדיקה באתר
+        run: python3 scripts/quality.py --site "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+      - name: עדכון הדוח בבעיה (issue) באתר GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="דוח בודק האיכות"
+          n=$(gh issue list --state open --search "in:title $title" --json number,title -q ".[] | select(.title==\"$title\") | .number" | head -1)
+          if [ -z "$n" ]; then
+            gh issue create --title "$title" --body-file quality-report.md
+          else
+            gh issue comment "$n" --body-file quality-report.md
+          fi
