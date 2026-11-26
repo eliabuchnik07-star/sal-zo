@@ -78,7 +78,7 @@ h2 small,h1 small{font-family:var(--body);font-weight:500;color:var(--muted);fon
 .chip:hover{border-color:var(--brand);color:var(--brand)}
 
 /* categories */
-.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.cats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
 .cat{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px 8px;text-align:center;font-weight:600;color:var(--ink);text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;transition:border-color .15s,transform .15s}
 .cat span{font-size:1.9rem;line-height:1}
 .cat:hover{border-color:var(--brand);transform:translateY(-2px)}
@@ -227,7 +227,7 @@ body.docked footer{padding-bottom:96px}
   .hero{display:block;padding:22px}
   .hero h1{font-size:1.85rem}.hero p{font-size:1rem}
   .hero img{display:block;width:62%;max-width:280px;height:auto;margin:10px auto -6px}
-  .cats{grid-template-columns:repeat(5,1fr);gap:6px}
+  .cats{grid-template-columns:repeat(4,1fr);gap:6px}
   .cat{padding:10px 2px;font-size:.72rem;line-height:1.2;gap:6px;border-radius:12px}.cat span{font-size:1.5rem}
   .cmp-side .thumb{width:60%;margin:0 auto}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -350,6 +350,7 @@ const CATS=[
  ["dairy","🥛","חלב וביצים","חלב גבינה גבינת קוטג יוגורט יופלה מעדן שמנת חמאה לבן לבנה ביצים ביצה מילקי דנונה צפתית בולגרית פרמזן מוצרלה צהובה אשל גיל"],
  ["meat","🥩","בשר, עוף ודגים","בשר עוף חזה שניצל כרעיים פרגית הודו נקניק נקניקיות קבב המבורגר אנטריקוט טחון כבד פסטרמה סלמי צלי שוקיים כנפיים דג דגים סלמון טונה אמנון מושט בקלה דניס לברק סרדינים הרינג"],
  ["bread","🥖","לחם ומאפים","לחם לחמניות לחמניה פיתה פיתות בגט חלה טורטיה עוגה עוגת עוגיות קרואסון מאפה בורקס קרקר פריכיות"],
+ ["deli","🥗","סלטים ומעדנייה","סלט סלטי חומוס מטבוחה"],
  ["pantry","🥫","מזווה ובישול","אורז פסטה ספגטי קמח סוכר מלח שמן עדשים חומוס שעועית פתיתים קוסקוס רסק רוטב תבלין פפריקה כמון קטשופ מיונז חרדל טחינה דבש ריבה ממרח דגני קורנפלקס שיבולת אטריות שימורי תירס זיתים מרק"],
  ["snacks","🍪","חטיפים ומתוקים","במבה ביסלי תפוצ ציפס שוקולד חטיף וופל סוכריות מסטיק פופקורן בייגלה אגוזים גרעינים קליק"],
  ["drinks","🥤","משקאות","מים מיץ קולה משקה סודה בירה יין וודקה קפה תה נקטר ספרייט פאנטה שוקו פריגת תפוזינה"],
@@ -358,8 +359,10 @@ const CATS=[
  ["care","🧴","פארם ותינוקות","שמפו משחת מברשת דאודורנט קרם טיטולים חיתולים האגיס פמפרס תחליב גילוח הנקה"]
 ].map(([id,ic,name,w])=>({id,ic,name,re:new RegExp("(^|[ \\-/,.(])("+w.split(" ").map(x=>x.length<=3?x+"(?=$|[ \\-/,.)%0-9])":x).join("|")+")")}));
 // a product belongs to the first category that matches, in this order (so "שוקולד חלב" is a snack, "דגני בוקר" is pantry)
-const CAT_ORDER=["snacks","frozen","care","home","drinks","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
-function catOf(i){const t=" "+CITY.search[i];for(const c of CAT_ORDER)if(c.re.test(t))return c.id;return null}
+const CAT_ORDER=["snacks","frozen","care","home","drinks","deli","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
+// the category is decided when the data is built (scripts/categorize.py + the quality checker in scripts/quality.py);
+// the word lists above are only a fallback for data files from before that
+function catOf(i){const p=CITY.products[i];if(p.length>4)return p[4];const t=" "+CITY.search[i];for(const c of CAT_ORDER)if(c.re.test(t))return c.id;return null}
 let catLimit=60;
 const POPULAR=["חלב","לחם","ביצים","במבה","קוטג'","קפה","אורז","שוקולד","טונה","שמן"];
 
