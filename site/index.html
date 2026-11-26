@@ -3,144 +3,184 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>סל זול</title>
-<meta name="description" content="בוחרים עיר, בונים רשימת קניות, ורואים באיזה סניף בעיר שלך הסל הכי זול.">
-<meta name="theme-color" content="#0b6b45">
+<title>סלסה פראייר · מי שלא משווה משלם יותר</title>
+<meta name="description" content="משווים מחירים, חוסכים בכל קנייה. בוחרים עיר, בונים סל, ורואים באיזה סניף בעיר שלך הסל הכי זול.">
+<meta name="theme-color" content="#176b38">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Rubik:wght@600;700;800&display=swap">
 <style>
-/* Layout: sticky green header with city picker; desktop = products (wide) + basket/ranking column; mobile = one column with a sticky bottom summary bar. */
+/* Pages (home, categories, product comparison, basket, favorites) switch by the address hash.
+   White header with green logo and nav; light-green hero; category tiles; product cards; dark-green footer. */
 :root{
-  --brand:#0b6b45; --brand-2:#0f8a5a; --brand-ink:#ffffff; --brand-soft:#e4f4ec;
-  --bg:#f3f5f2; --card:#ffffff; --ink:#18211d; --muted:#65736c; --line:#e1e7e3;
-  --amber:#b26200; --amber-soft:#fff2df; --red:#c0362c; --red-soft:#fde9e7;
-  --shadow:0 1px 2px rgba(16,40,28,.06),0 6px 20px rgba(16,40,28,.06);
-  --r:16px; --display:"Rubik",system-ui,sans-serif; --body:"Heebo",system-ui,sans-serif;
+  --brand:#176b38; --brand-dk:#104b2b; --brand-soft:#eaf6df; --best:#f0f8e9; --best-line:#9bc89f;
+  --bg:#f7f9f6; --card:#ffffff; --ink:#17231b; --muted:#5f6f63; --line:#e6ebe6; --head:#ffffff; --foot:#123f27;
+  --amber:#a85b00; --amber-soft:#fff2df; --red:#c0362c; --red-soft:#fde9e7;
+  --shadow:0 1px 2px rgba(16,40,28,.05),0 4px 14px rgba(16,40,28,.05);
+  --r:17px; --display:"Rubik",system-ui,sans-serif; --body:"Heebo",system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
-  --brand:#0e5c3d; --brand-2:#3ccf8e; --brand-soft:#15382a;
-  --bg:#0f1512; --card:#18201c; --ink:#e8efeb; --muted:#9aaaa2; --line:#27322c;
+  --brand:#3fb873; --brand-dk:#8fdcae; --brand-soft:#173527; --best:#183a29; --best-line:#2f7a4f;
+  --bg:#0f1512; --card:#18201c; --ink:#e8efeb; --muted:#9aaaa2; --line:#27322c; --head:#141b17; --foot:#0b2417;
   --amber:#f2b35a; --amber-soft:#3a2a10; --red:#ff8a80; --red-soft:#3d1d1a;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
 *{box-sizing:border-box}
-html{scroll-padding-top:90px}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+html{scroll-padding-top:120px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--brand-2);outline-offset:2px}
-.gut{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* header */
-header{position:sticky;top:0;z-index:20;background:var(--brand);color:var(--brand-ink);padding-top:env(safe-area-inset-top,0px)}
-.bar{display:flex;align-items:center;gap:12px;padding-block:12px}
-.logo{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:1.45rem;letter-spacing:-.01em;white-space:nowrap}
-.logo svg{width:30px;height:30px}
-.city{margin-inline-start:auto;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);border-radius:999px;padding:4px 6px 4px 12px;min-width:0}
-.city svg{width:18px;height:18px;flex:none;opacity:.9}
-.city select{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:inherit;font:inherit;font-weight:700;padding:6px 4px;max-width:52vw;text-overflow:ellipsis}
-.city .caret{font-size:.8rem;opacity:.85;padding-inline-end:6px}
-.city select option{color:#18211d}
-.search{padding-bottom:14px}
-.sbox{display:flex;align-items:center;gap:10px;background:var(--card);color:var(--ink);border-radius:14px;padding:0 14px;box-shadow:0 4px 18px rgba(0,0,0,.12)}
-.sbox svg{width:20px;height:20px;color:var(--muted);flex:none}
-.sbox input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:1.05rem;color:inherit;padding:14px 0;outline:none}
-.meta{font-size:.85rem;opacity:.85;padding-bottom:10px}
+header{position:sticky;top:0;z-index:20;background:var(--head);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.bar{display:flex;align-items:center;gap:18px;padding-block:14px}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:1.55rem;color:var(--brand);text-decoration:none;white-space:nowrap}
+.logo .mark{width:52px;height:52px;flex:none;border-radius:14px;background:var(--brand-soft)}
+.wm{display:flex;flex-direction:column;line-height:1}
+.wm b{font-size:1.6rem;font-weight:800}
+.wm em{font-style:normal;color:#e0a100;-webkit-text-stroke:.5px #b07a00}
+.wm small{font-family:var(--body);font-size:.74rem;font-weight:700;color:var(--muted);margin-top:3px}
+nav{display:flex;gap:6px;align-items:center}
+nav a{display:flex;align-items:center;gap:6px;color:var(--brand-dk);text-decoration:none;font-weight:600;padding:8px 12px;border-radius:10px;white-space:nowrap}
+nav a:hover{background:var(--brand-soft)}
+nav a.on{background:var(--brand-soft);color:var(--brand)}
+nav .cnt{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--brand);color:#fff;font-size:.78rem;font-weight:800;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+nav .cnt:empty{display:none}
+.city{margin-inline-start:auto;display:flex;align-items:center;gap:6px;background:var(--brand-soft);color:var(--brand-dk);border-radius:999px;padding:4px 6px 4px 12px;min-width:0}
+.city svg{width:18px;height:18px;flex:none}
+.city select{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:inherit;font:inherit;font-weight:700;padding:6px 4px;max-width:46vw;text-overflow:ellipsis}
+.city .caret{font-size:.75rem;padding-inline-end:6px}
+.city select option{color:#17231b;background:#fff}
 
-/* layout */
-main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start;padding-block:20px 120px}
-@media (max-width:900px){main{grid-template-columns:minmax(0,1fr);gap:20px}}
-section h2{font-family:var(--display);font-size:1.15rem;margin:0 0 12px;display:flex;align-items:baseline;gap:8px;text-wrap:balance}
-section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font-size:.85rem}
+/* page */
+main{flex:1;padding-block:26px 110px}
+.page{display:none}.page.on{display:block}
+h1,h2{font-family:var(--display);color:var(--brand-dk);text-wrap:balance}
+h1{font-size:1.9rem;margin:0 0 16px}
+h2{font-size:1.3rem;margin:28px 0 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small,h1 small{font-family:var(--body);font-weight:500;color:var(--muted);font-size:.9rem}
 
-/* product grid */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-@media (max-width:480px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
-.prod{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
-.prod{cursor:pointer}
-.pd-back{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
-.pd-back.on{display:flex}
-@media(min-width:700px){.pd-back{align-items:center}}
-.pd{background:var(--card);color:var(--ink);width:min(560px,100%);max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px 22px}
-@media(min-width:700px){.pd{border-radius:20px}}
-.pd-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}.pd-head .thumb{width:84px;flex:none}
-.pd-head h3{margin:0;font-size:1.1rem}.pd-head p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
-.pd-x{margin-inline-start:auto;border:0;background:var(--bg);color:var(--ink);border-radius:50%;width:36px;height:36px;font-size:1.2rem;flex:none}
-.pd-only{background:var(--brand-soft);color:var(--brand-2);font-weight:700;border-radius:12px;padding:10px 12px;margin-bottom:10px}
-.pd-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
-.pd-row i{width:10px;height:10px;border-radius:50%;flex:none}
-.pd-row .nm{flex:1;min-width:0}.pd-row .nm b{display:block}.pd-row .nm small{color:var(--muted)}
-.pd-row .pr{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;text-align:left}
-.pd-row .pr small{display:block;font-family:inherit;font-weight:500;font-size:.75rem;color:var(--muted)}
-.pd-row.best{background:var(--brand-soft);border-radius:12px;border-color:transparent}
-.pd-row.best .pr small{color:var(--brand-2);font-weight:700}
-.pd-add{margin-top:14px;width:100%;border:0;background:var(--brand-2);color:#fff;border-radius:14px;padding:12px;font-weight:700;font-size:1rem}
-.bi .nm small.only{display:block;color:#b45309;font-weight:700}
-.onlybox{background:#fff4e0;color:#8a4b00;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:.88rem;line-height:1.5}
-@media (prefers-color-scheme: dark){.onlybox{background:#3a2a10;color:#ffcf8a}.bi .nm small.only{color:#ffb454}}
+/* hero */
+.hero{background:var(--brand-soft);border-radius:22px;padding:34px;display:flex;align-items:center;gap:28px}
+.hero .txt{flex:1;min-width:0}
+.hero h1{font-size:2.5rem;line-height:1.15;margin:0 0 12px}
+.hero p{font-size:1.15rem;color:var(--muted);margin:0}
+.hero img{width:42%;max-width:440px;height:auto;flex:none;margin-block:-14px}
+.search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 16px;margin:24px 0 8px;box-shadow:var(--shadow)}
+.search svg{width:22px;height:22px;color:var(--muted);flex:none}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:1.08rem;color:inherit;padding:16px 0;outline:none}
+.meta{color:var(--muted);font-size:.85rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;font-weight:500}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+
+/* categories */
+.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px 8px;text-align:center;font-weight:600;color:var(--ink);text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;transition:border-color .15s,transform .15s}
+.cat span{font-size:1.9rem;line-height:1}
+.cat:hover{border-color:var(--brand);transform:translateY(-2px)}
+.cat.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.catrow{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:8px;scrollbar-width:thin}
+.catrow .cat{flex:none;flex-direction:row;padding:8px 14px;border-radius:999px;font-size:.9rem;gap:6px}
+.catrow .cat span{font-size:1.15rem}
+.catrow .cat:hover{transform:none}
+
+/* product cards */
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.prod{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:15px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.heart{position:absolute;top:10px;left:10px;z-index:1;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:1.15rem;line-height:1;display:grid;place-items:center;padding:0}
+.heart.on{color:#d6334a;border-color:#f3c2ca}
+.pimg{display:block;text-decoration:none}
+.thumb{aspect-ratio:4/3;max-width:100%;border-radius:12px;background:#fafcf9;display:grid;place-items:center;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
+.thumb .ph{font-family:var(--display);font-weight:800;font-size:2.4rem;color:#b9c7bf}
+@media (prefers-color-scheme: dark){.thumb{background:#fff}}
+.pname{font-weight:700;font-size:1rem;line-height:1.3;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em;margin-top:6px}
+.pname:hover{color:var(--brand)}
+.pmeta{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cheap{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;margin-top:4px;min-width:0}
+.cheap span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums;line-height:1.1}
+.ppn{color:var(--muted);font-size:.78rem}
+.pbtns{display:flex;flex-direction:column;gap:7px;margin-top:auto;padding-top:8px}
+.btn{border:0;background:var(--brand);color:#fff;padding:11px 14px;border-radius:10px;font-weight:700;text-align:center;text-decoration:none;display:block}
+.btn:hover{background:var(--brand-dk)}
+@media (prefers-color-scheme: dark){.btn:hover{background:#2f9a5d}}
+.btn.soft{background:var(--brand-soft);color:var(--brand)}
+.btn.soft:hover{background:#d9efc8}
+@media (prefers-color-scheme: dark){.btn.soft:hover{background:#1f4532}}
+.step{display:flex;align-items:center;justify-content:space-between;background:var(--brand-soft);border-radius:10px}
+.step button{border:0;background:transparent;color:var(--brand);width:44px;height:42px;font-size:1.3rem;font-weight:800;border-radius:10px}
+.step button:hover{background:rgba(23,107,56,.1)}
+.step span{font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums}
+.step span small{font-weight:500;font-size:.8rem}
+.hint{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;color:var(--muted)}
+.more{display:block;width:100%;margin-top:14px;border:1px dashed var(--best-line);background:transparent;border-radius:12px;padding:12px;font-weight:700;color:var(--brand)}
+
+/* chain logos */
 .clogo{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff;border:1px solid var(--line);overflow:hidden;flex:none}
 .clogo img{width:100%;height:100%;object-fit:contain;padding:4px}
 .clogo b{width:100%;height:100%;display:grid;place-items:center;background:var(--c);color:#fff;font-weight:800;font-size:.9rem}
 .clogo.wide{width:58px}.clogo.wide img{padding:2px}.clogo.sm.wide{width:36px}
-.clogo.sm{width:20px;height:20px;border-radius:6px}.clogo.sm img{padding:1px}.clogo.sm b{font-size:.65rem}
-.thumb{aspect-ratio:1/1;max-width:100%;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line)}
-.thumb img{width:100%;height:100%;object-fit:contain;padding:8px}
-.thumb .ph{font-family:var(--display);font-weight:800;font-size:2.2rem;color:#b9c7bf}
-.pname{font-weight:500;font-size:.95rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
-.pmeta{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
-.from{font-size:.78rem;color:var(--muted);line-height:1.2}
-.from .cheap{display:flex;align-items:center;gap:5px;font-weight:700;color:var(--ink);font-size:.8rem}
-.from .cheap i{width:9px;height:9px;border-radius:50%;flex:none}
-.from b{display:block;font-family:var(--display);font-size:1.1rem;color:var(--ink);font-variant-numeric:tabular-nums}
-.add{border:0;background:var(--brand-2);color:#fff;border-radius:12px;width:40px;height:40px;font-size:1.4rem;font-weight:700;display:grid;place-items:center;flex:none}
-.step{display:flex;align-items:center;gap:4px;background:var(--brand-soft);border-radius:12px;flex:none}
-.step span{min-width:22px;text-align:center;font-weight:700;color:var(--brand-2);font-variant-numeric:tabular-nums}
-.step .sub{border:0;background:transparent;color:var(--brand-2);width:40px;height:40px;font-size:1.3rem;font-weight:700;border-radius:12px}
-.add.in{background:var(--brand-soft);color:var(--brand-2);font-size:1rem;width:auto;padding:0 10px}
-.hint{background:var(--card);border-radius:var(--r);padding:20px;color:var(--muted);box-shadow:var(--shadow)}
-.cats{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:6px;scrollbar-width:thin}
-.cat{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:86px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:10px 8px;font-weight:600;font-size:.82rem}
-.cat span{font-size:1.5rem;line-height:1}
-.cat:hover{border-color:var(--brand-2)}
-.cat.on{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;font-weight:500}
-.chip:hover{border-color:var(--brand-2);color:var(--brand-2)}
+.clogo.sm{width:22px;height:22px;border-radius:6px}.clogo.sm img{padding:1px}.clogo.sm b{font-size:.68rem}
 
-/* basket + ranking column */
-aside{display:flex;flex-direction:column;gap:20px;position:sticky;top:150px}
-@media (max-width:900px){aside{position:static}}
-.panel{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:16px}
-.blist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.bi{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+/* product comparison page */
+.back{border:0;background:none;color:var(--brand);font-weight:700;padding:0;margin-bottom:14px;display:inline-flex;gap:6px}
+.cmp{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:start}
+.cmp-side{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px;position:sticky;top:110px}
+.cmp-side h1{font-size:1.4rem;margin:4px 0 0}
+.cmp-side .heart{position:static;width:auto;height:auto;border-radius:10px;padding:10px;font-size:1rem;display:flex;gap:6px;justify-content:center;font-weight:700}
+.sum{background:var(--brand-soft);color:var(--brand-dk);font-weight:700;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;display:flex;align-items:center;gap:12px}
+.row .nm{flex:1;min-width:0}.row .nm b{display:block}.row .nm small{color:var(--muted);font-size:.82rem}
+.row .pr{font-family:var(--display);font-weight:800;font-size:1.15rem;font-variant-numeric:tabular-nums;text-align:left;white-space:nowrap}
+.row .pr small{display:block;font-family:var(--body);font-weight:500;font-size:.78rem;color:var(--muted)}
+.row.best{border-color:var(--best-line);background:var(--best)}
+.row.best .pr{color:var(--brand)}.row.best .pr small{color:var(--brand);font-weight:700}
+
+/* basket page */
+.cart{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:26px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.panel h2{margin-top:0}
+.blist{list-style:none;margin:0;padding:0}
+.bi{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
 .bi:last-child{border-bottom:0}
-.bi .thumb{width:44px;flex:none;border-radius:10px}
-.bi .thumb img{padding:3px}.bi .thumb .ph{font-size:1.1rem}
-.bi .nm{flex:1;min-width:0;font-size:.92rem;line-height:1.3}
-.bi .nm small{display:block;color:var(--muted);font-size:.78rem}
-.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
-.qty button{border:0;background:transparent;width:30px;height:30px;font-weight:700}
-.qty span{min-width:20px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
-.empty{color:var(--muted);padding:6px 0}
-.linkbtn{border:0;background:none;color:var(--brand-2);font-weight:700;padding:0}
-.btns{display:flex;justify-content:space-between;margin-top:10px}
-
+.bi .thumb{width:52px;aspect-ratio:1/1;flex:none;border-radius:10px}
+.bi .thumb img{padding:3px}.bi .thumb .ph{font-size:1.2rem}
+.bi .nm{flex:1;min-width:0;font-size:.95rem;line-height:1.3;text-decoration:none}
+.bi .nm small{display:block;color:var(--muted);font-size:.8rem}
+.bi .nm small.only{color:var(--amber);font-weight:700}
+.qty{display:flex;align-items:center;background:var(--brand-soft);border-radius:10px;flex:none}
+.qty button{border:0;background:transparent;color:var(--brand);width:34px;height:34px;font-weight:800;font-size:1.05rem}
+.qty span{min-width:20px;text-align:center;font-variant-numeric:tabular-nums;font-weight:800;color:var(--brand)}
+.links{display:flex;justify-content:space-between;margin-top:12px}
+.linkbtn{border:0;background:none;color:var(--brand);font-weight:700;padding:0}
+.onlybox{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:.9rem}
+.cartsum{display:flex;align-items:center;gap:12px;background:var(--best);border:1px solid var(--best-line);border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
+.cartsum .t{flex:1;min-width:0}.cartsum .t small{display:block;color:var(--muted);font-size:.85rem}
+.cartsum .t b{font-family:var(--display);font-size:1.5rem;color:var(--brand)}
+@media (min-width:981px){.cartsum .btn{display:none}}
 .stores{display:flex;flex-direction:column;gap:10px}
-.st{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:8px;border:2px solid transparent}
-.st.best{border-color:var(--brand-2)}
-.st .row{display:flex;align-items:center;gap:10px}
-.badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-family:var(--display);font-weight:800;font-size:.95rem;flex:none}
+.st{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
+.st.best{border:1px solid var(--best-line);background:var(--best)}
+.st .top{display:flex;align-items:center;gap:10px}
+.rank{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--bg);color:var(--muted);font-weight:800;font-size:.85rem;flex:none}
+.st.best .rank{background:var(--brand);color:#fff}
 .st .who{flex:1;min-width:0}
-.st .who b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .st .who small{display:block;color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.price{text-align:left;flex:none}
-.price b{display:block;font-family:var(--display);font-size:1.35rem;font-variant-numeric:tabular-nums;line-height:1.1}
-.price small{color:var(--muted);font-size:.78rem;white-space:nowrap}
-.best .price small{color:var(--brand-2);font-weight:700}
+.tot{text-align:left;flex:none}
+.tot b{display:block;font-family:var(--display);font-size:1.35rem;font-variant-numeric:tabular-nums;line-height:1.1}
+.tot small{color:var(--muted);font-size:.78rem;white-space:nowrap}
+.st.best .tot b,.st.best .tot small{color:var(--brand);font-weight:800}
+.winner{font-size:.8rem;font-weight:800;color:var(--brand)}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
-.tag{font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--brand-soft);color:var(--brand-2)}
-.tag.a{background:var(--amber-soft);color:var(--amber)} .tag.r{background:var(--red-soft);color:var(--red)}
-details summary{color:var(--brand-2);font-weight:700;font-size:.88rem;cursor:pointer;list-style:none}
+.tag{font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--brand-soft);color:var(--brand)}
+.tag.a{background:var(--amber-soft);color:var(--amber)}.tag.r{background:var(--red-soft);color:var(--red)}
+details summary{color:var(--brand);font-weight:700;font-size:.88rem;cursor:pointer;list-style:none}
 details summary::-webkit-details-marker{display:none}
 details summary::before{content:"▾ "}
 details:not([open]) summary::before{content:"◂ "}
@@ -148,92 +188,137 @@ details:not([open]) summary::before{content:"◂ "}
 .lines td{padding:5px 2px;border-top:1px solid var(--line);vertical-align:top}
 .lines td.n{text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums}
 .lines small{display:block;color:var(--muted);font-size:.75rem}
-.ok{color:var(--brand-2)} .mb{color:var(--amber)} .no{color:var(--red)}
-.more{border:1px dashed var(--line);background:transparent;border-radius:12px;padding:10px;font-weight:700;color:var(--muted)}
+.ok{color:var(--brand)}.mb{color:var(--amber)}.no{color:var(--red)}
+.legend{color:var(--muted);font-size:.8rem;line-height:1.7;margin-top:14px}
 
-/* mobile bottom bar */
-.dock{position:fixed;inset:auto 0 0 0;z-index:30;background:var(--card);box-shadow:0 -6px 24px rgba(0,0,0,.12);padding-bottom:env(safe-area-inset-bottom,0px);display:none}
-.dock .gut{display:flex;align-items:center;gap:12px;padding-block:10px}
-.dock .txt{flex:1;min-width:0;font-size:.9rem;line-height:1.3}
-.dock .txt b{font-family:var(--display);font-size:1.15rem}
-.dock button{border:0;background:var(--brand-2);color:#fff;border-radius:12px;padding:12px 16px;font-weight:700;white-space:nowrap}
-@media (max-width:900px){.dock.on{display:block}}
+/* bottom bar with the cheapest basket */
+.dock{position:fixed;inset:auto 0 0 0;z-index:30;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom,0px);display:none}
+.dock.on{display:block}
+.dock .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
+.dock .txt{flex:1;min-width:0;font-size:.9rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dock .txt b{font-family:var(--display);font-size:1.2rem;color:var(--brand)}
+.dock .btn{white-space:nowrap}
 
-.legend{color:var(--muted);font-size:.8rem;line-height:1.6;padding:0 4px}
-.legend b{font-weight:700}
-.loading{display:flex;align-items:center;gap:10px;color:var(--muted)}
-.spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand-2);animation:sp 0.8s linear infinite}
+footer{background:var(--foot);color:#fff;padding:30px 0 calc(30px + env(safe-area-inset-bottom,0px));text-align:center}
+footer b{font-family:var(--display);font-size:1.15rem}
+footer p{margin:8px auto 0;max-width:720px;font-size:.82rem;opacity:.8;line-height:1.6}
+body.docked footer{padding-bottom:96px}
+
+.loading{display:flex;align-items:center;gap:10px}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.cat{transition:none}}
 
-/* phones */
-@media (max-width:600px){
-  .bar{padding-block:8px}.logo{font-size:1.2rem}.logo svg{width:24px;height:24px}
-  .search{padding-bottom:8px}.sbox input{padding:11px 0;font-size:1rem}
-  .meta{font-size:.75rem;padding-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pfoot{flex-wrap:wrap}.pfoot .from{flex:1 1 100%}
-  .pfoot .add{width:100%;height:38px;font-size:1.2rem}.pfoot .add.in{width:100%}.pfoot .step{width:100%;justify-content:space-between}.pfoot .step .add{width:38px}
-  .cat{min-width:74px;padding:8px 6px;font-size:.75rem}.cat span{font-size:1.3rem}
-  .dock .gut{gap:8px}.dock button{padding:11px 12px;font-size:.9rem}
-  .dock button.alt{background:var(--brand-soft);color:var(--brand-2)}
-  #basketSec{scroll-margin-top:150px}
+/* tablets */
+@media (max-width:980px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cart,.cmp{grid-template-columns:minmax(0,1fr)}
+  .cmp-side{position:static}
 }
-@media (min-width:601px){.dock button.alt{display:none}}
-@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+/* phones */
+@media (max-width:800px){
+  .bar{flex-wrap:wrap;gap:6px 10px;padding-block:8px 4px}
+  .city{padding:2px 2px 2px 8px;gap:3px}.city svg{width:15px;height:15px}.city select{max-width:23vw;font-size:.88rem;padding:5px 2px}.city .caret{padding-inline-end:4px;font-size:.6rem}
+  .logo{gap:6px}.logo .mark{width:40px;height:40px;border-radius:10px}.wm b{font-size:1.15rem}.wm small{font-size:.6rem;margin-top:2px}
+  nav{order:3;width:100%;overflow-x:auto;gap:2px;margin-inline:-6px;padding-bottom:4px;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav a{padding:7px 10px;font-size:.92rem}
+  main{padding-top:16px}
+  .hero{display:block;padding:22px}
+  .hero h1{font-size:1.85rem}.hero p{font-size:1rem}
+  .hero img{display:block;width:62%;max-width:280px;height:auto;margin:10px auto -6px}
+  .cats{grid-template-columns:repeat(5,1fr);gap:6px}
+  .cat{padding:10px 2px;font-size:.72rem;line-height:1.2;gap:6px;border-radius:12px}.cat span{font-size:1.5rem}
+  .cmp-side .thumb{width:60%;margin:0 auto}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  h1{font-size:1.55rem}
+}
+@media (max-width:430px){
+  .grid{gap:8px}
+  .prod{padding:10px}
+  .heart{top:6px;left:6px;width:32px;height:32px;font-size:1rem}
+  .pname{font-size:.92rem}
+  .pp{font-size:1.25rem}
+  .btn{padding:10px 8px;font-size:.92rem}
+  .step button{width:38px;height:40px}
+  .dock .btn{padding:11px 12px;font-size:.9rem}
+}
 </style>
 </head>
 <body>
 <header>
-  <div class="gut">
-    <div class="bar">
-      <div class="logo">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#fff" opacity=".16"/><path d="M7 9h3l2.4 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.5L25.5 13H11.3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="25" r="1.8" fill="#fff"/><circle cx="22" cy="25" r="1.8" fill="#fff"/></svg>
-        סל זול
-      </div>
-      <label class="city" for="city" title="העיר שלך">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-        <select id="city" aria-label="העיר שלך"></select><span class="caret" aria-hidden="true">▼</span>
-      </label>
-    </div>
-    <div class="search">
-      <div class="sbox">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="חפשו מוצר: חלב, במבה, קפה, ברקוד…" autocomplete="off" enterkeyhint="search" disabled>
-      </div>
-    </div>
-    <div class="meta" id="meta">טוען נתונים…</div>
+  <div class="wrap bar">
+    <a class="logo" href="#/" aria-label="סלסה פראייר, מי שלא משווה משלם יותר">
+      <img class="mark" src="brand/mark.png" alt="" width="48" height="48">
+      <span class="wm"><b>סלסה <em>פראייר</em></b><small>מי שלא משווה – משלם יותר!</small></span>
+    </a>
+    <nav aria-label="תפריט">
+      <a href="#/" data-nav="home">ראשי</a>
+      <a href="#/cats" data-nav="cats">קטגוריות</a>
+      <a href="#/cart" data-nav="cart">סל הקניות 🛒 <span class="cnt" id="ccount"></span></a>
+      <a href="#/fav" data-nav="fav">מועדפים ♥ <span class="cnt" id="fcount"></span></a>
+    </nav>
+    <label class="city" for="city" title="העיר שלך">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <select id="city" aria-label="העיר שלך"></select><span class="caret" aria-hidden="true">▼</span>
+    </label>
   </div>
 </header>
 
-<div class="gut">
-<main>
-  <section id="productsSec" aria-live="polite">
-    <h2 id="ptitle">מוצרים</h2>
-    <div id="products"></div>
+<main class="wrap">
+  <section class="page" id="pg-home">
+    <div class="hero">
+      <div class="txt">
+        <h1>משווים מחירים.<br>חוסכים בכל קנייה.</h1>
+        <p id="herop">כל מוצר, כל המחירים, בכל הסניפים בעיר שלך.</p>
+      </div>
+      <img src="brand/logo.png" alt="סלסה פראייר: מי שלא משווה – משלם יותר!" width="900" height="621">
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="חיפוש מוצר או ברקוד: חלב, במבה, קפה…" autocomplete="off" enterkeyhint="search" disabled>
+    </div>
+    <div class="meta" id="meta">טוען נתונים…</div>
+    <div id="home"></div>
   </section>
 
-  <aside>
-    <section class="panel" id="basketSec">
-      <h2>הסל שלי <small id="bcount"></small></h2>
-      <ul class="blist" id="list"></ul>
-      <div class="btns"><button class="linkbtn" id="sample">סל לדוגמה</button><button class="linkbtn" id="clear">ניקוי הסל</button></div>
-    </section>
-    <section id="rankSec">
-      <h2 id="rtitle">איפה הכי זול</h2>
-      <div class="stores" id="stores"></div>
-    </section>
-    <p class="legend">
-      <b class="ok">✓ במלאי</b> נמכר בסניף ב־3 הימים האחרונים ·
-      <b class="mb">? לא בטוח</b> לא נמכר כמה ימים ·
-      <b class="no">✕ כנראה חסר</b> לא נמכר מעל שבועיים, כשבסניפים אחרים בעיר הוא נמכר ·
-      <b class="no">— לא נמכר בסניף</b> לא מופיע ברשימת המחירים של הסניף.<br>
-      המלאי הוא הערכה לפי מועד המכירה האחרון שהרשתות מפרסמות. המחירים הם מחירי מדף לפי חוק שקיפות המחירים, עדיין בלי מבצעים. תמונות: Open Food Facts.
-    </p>
-  </aside>
-</main>
-<div class="pd-back" id="pdback"><div class="pd" id="pd" role="dialog" aria-modal="true"></div></div>
-</div>
+  <section class="page" id="pg-cats"></section>
+  <section class="page" id="pg-p"></section>
 
-<div class="dock" id="dock"><div class="gut"><div class="txt" id="docktxt"></div><button id="dockbasket" class="alt">הסל שלי</button><button id="dockbtn">לסניף הכי זול</button></div></div>
+  <section class="page" id="pg-cart">
+    <h1>סל הקניות שלי</h1>
+    <div id="cartsum"></div>
+    <div class="cart">
+      <section class="panel" id="basketSec">
+        <h2>המוצרים בסל <small id="bcount"></small></h2>
+        <ul class="blist" id="list"></ul>
+        <div class="links"><button class="linkbtn" data-act="sample">סל לדוגמה</button><button class="linkbtn" data-act="clear">ניקוי הסל</button></div>
+      </section>
+      <section>
+        <h2 id="rtitle" style="margin-top:0">איפה הכי זול</h2>
+        <div class="stores" id="stores"></div>
+        <p class="legend">
+          <b class="ok">✓ במלאי</b> נמכר בסניף ב־3 הימים האחרונים ·
+          <b class="mb">? לא בטוח</b> לא נמכר כמה ימים ·
+          <b class="no">✕ כנראה חסר</b> לא נמכר מעל שבועיים, כשבסניפים אחרים בעיר הוא נמכר ·
+          <b class="no">— לא נמכר בסניף</b> לא מופיע ברשימת המחירים של הסניף.<br>
+          המלאי הוא הערכה לפי מועד המכירה האחרון שהרשתות מפרסמות.
+        </p>
+      </section>
+    </div>
+  </section>
+
+  <section class="page" id="pg-fav"></section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <b>סלסה פראייר</b> | מי שלא משווה – משלם יותר!
+    <p>המחירים הם מחירי מדף שהרשתות מפרסמות לפי חוק שקיפות המחירים, עדיין בלי מבצעים. ההשוואה היא רק בין הסניפים בעיר שבחרתם. תמונות מוצרים: Open Food Facts.</p>
+  </div>
+</footer>
+
+<div class="dock" id="dock"><div class="wrap"><div class="txt" id="docktxt"></div><a class="btn" href="#/cart" id="dockbtn">לסל ולהשוואה</a></div></div>
 
 <script>
 const IMG="https://images.openfoodfacts.org/images/products/";
@@ -248,50 +333,58 @@ const CHAIN_SITE={"שופרסל":"shufersal.co.il","רמי לוי":"rami-levy.co
   "ויקטורי":"victoryonline.co.il","קרפור":"carrefour.co.il","חצי חינם":"hazi-hinam.co.il","פרשמרקט":"freshmarket.co.il","קינג סטור":"kingstore.co.il",
   "סופר ספיר":"supersapir.co.il","דור אלון":"doralon.co.il","סטופ מרקט":"stopmarket.co.il","מעיין 2000":"maayan2000.co.il",
   "סיטי מרקט":"citymarket-shops.co.il"};
-// chain logo: the chain's own site icon, or a colored initial when there is none
-// logos the site owner supplied (site/logos), used before the website icon
+// logos the site owner supplied (site/logos), used before the chain website icon
 const CHAIN_LOGO={"שפע ברכת השם":"shefa","קשת טעמים":"keshet","שוק העיר":"shuk","סאלח דבאח":"dabah","פוליצר":"politzer","זול ובגדול":"zol"};
 function sname(s){return s.online?"קנייה אונליין":s.name}
 function logo(chain,cls=""){if(CHAIN_LOGO[chain])return `<span class="clogo wide ${cls}"><img alt="" loading="lazy" src="logos/${CHAIN_LOGO[chain]}.png"></span>`;
   const d=CHAIN_SITE[chain],ini=esc((chain||"?").trim()[0]||"?"),bg=chainColor(chain);
   return `<span class="clogo ${cls}" style="--c:${bg}">${d?`<img alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain=${d}&sz=64" onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:'${ini}'}))">`:`<b>${ini}</b>`}</span>`}
 
-
-let INDEX=null,CITY=null,IMAGES={},showAllStores=false;
+let INDEX=null,CITY=null,IMAGES={},showAllStores=false,PAGE="home";
 let basket=ls.get("basket2",{});
+let favs=ls.get("favs",[]);
 const SAMPLE=["חלב טרי 3%","במבה","קוטג","לחם אחיד","ביצים","קפה טורקי","שמן קנולה","פסטה"];
 const CATS=[
- ["fruit","🥦","פירות וירקות","עגבני מלפפון תפוח בננה בננות תפוז לימון בצל שום גזר תפוא תפוחי פלפל חסה כרוב אבוקדו ענבים אבטיח מלון קישוא קישואים חציל פטרוזיליה כוסברה שמיר נענע פטריות אגס אפרסק שזיף תות מנגו קלמנטינה ברוקולי כרובית בטטה סלק צנון אננס קיווי רימון"],
+ ["fruit","🥬","פירות וירקות","עגבני מלפפון תפוח בננה בננות תפוז לימון בצל שום גזר תפוא תפוחי פלפל חסה כרוב אבוקדו ענבים אבטיח מלון קישוא קישואים חציל פטרוזיליה כוסברה שמיר נענע פטריות אגס אפרסק שזיף תות מנגו קלמנטינה ברוקולי כרובית בטטה סלק צנון אננס קיווי רימון"],
  ["dairy","🥛","חלב וביצים","חלב גבינה גבינת קוטג יוגורט יופלה מעדן שמנת חמאה לבן לבנה ביצים ביצה מילקי דנונה צפתית בולגרית פרמזן מוצרלה צהובה אשל גיל"],
- ["meat","🍗","בשר, עוף ודגים","בשר עוף חזה שניצל כרעיים פרגית הודו נקניק נקניקיות קבב המבורגר אנטריקוט טחון כבד פסטרמה סלמי צלי שוקיים כנפיים דג דגים סלמון טונה אמנון מושט בקלה דניס לברק סרדינים הרינג"],
- ["bread","🍞","לחם ומאפים","לחם לחמניות לחמניה פיתה פיתות בגט חלה טורטיה עוגה עוגת עוגיות קרואסון מאפה בורקס קרקר פריכיות"],
- ["pantry","🍝","מזווה ובישול","אורז פסטה ספגטי קמח סוכר מלח שמן עדשים חומוס שעועית פתיתים קוסקוס רסק רוטב תבלין פפריקה כמון קטשופ מיונז חרדל טחינה דבש ריבה ממרח דגני קורנפלקס שיבולת אטריות שימורי תירס זיתים מרק"],
- ["snacks","🍫","חטיפים ומתוקים","במבה ביסלי תפוצ ציפס שוקולד חטיף וופל סוכריות מסטיק פופקורן בייגלה אגוזים גרעינים קליק"],
+ ["meat","🥩","בשר, עוף ודגים","בשר עוף חזה שניצל כרעיים פרגית הודו נקניק נקניקיות קבב המבורגר אנטריקוט טחון כבד פסטרמה סלמי צלי שוקיים כנפיים דג דגים סלמון טונה אמנון מושט בקלה דניס לברק סרדינים הרינג"],
+ ["bread","🥖","לחם ומאפים","לחם לחמניות לחמניה פיתה פיתות בגט חלה טורטיה עוגה עוגת עוגיות קרואסון מאפה בורקס קרקר פריכיות"],
+ ["pantry","🥫","מזווה ובישול","אורז פסטה ספגטי קמח סוכר מלח שמן עדשים חומוס שעועית פתיתים קוסקוס רסק רוטב תבלין פפריקה כמון קטשופ מיונז חרדל טחינה דבש ריבה ממרח דגני קורנפלקס שיבולת אטריות שימורי תירס זיתים מרק"],
+ ["snacks","🍪","חטיפים ומתוקים","במבה ביסלי תפוצ ציפס שוקולד חטיף וופל סוכריות מסטיק פופקורן בייגלה אגוזים גרעינים קליק"],
  ["drinks","🥤","משקאות","מים מיץ קולה משקה סודה בירה יין וודקה קפה תה נקטר ספרייט פאנטה שוקו פריגת תפוזינה"],
- ["frozen","❄️","קפואים","קפוא קפואה קפואים גלידה שלגון ארטיק"],
+ ["frozen","🧊","קפואים","קפוא קפואה קפואים גלידה שלגון ארטיק"],
  ["home","🧽","ניקיון ובית","אקונומיקה סבון ניקוי כביסה מרכך כלים טישו טואלט מגבונים שקיות אלומיניום ספוג מטהר מנקה"],
- ["care","🧴","טיפוח ותינוקות","שמפו משחת מברשת דאודורנט קרם טיטולים חיתולים האגיס פמפרס תחליב גילוח הנקה"]
+ ["care","🧴","פארם ותינוקות","שמפו משחת מברשת דאודורנט קרם טיטולים חיתולים האגיס פמפרס תחליב גילוח הנקה"]
 ].map(([id,ic,name,w])=>({id,ic,name,re:new RegExp("(^|[ \\-/,.(])("+w.split(" ").map(x=>x.length<=3?x+"(?=$|[ \\-/,.)%0-9])":x).join("|")+")")}));
 // a product belongs to the first category that matches, in this order (so "שוקולד חלב" is a snack, "דגני בוקר" is pantry)
 const CAT_ORDER=["snacks","frozen","care","home","drinks","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
 function catOf(i){const t=" "+CITY.search[i];for(const c of CAT_ORDER)if(c.re.test(t))return c.id;return null}
-let CAT=null,catLimit=60;
+let catLimit=60;
 const POPULAR=["חלב","לחם","ביצים","במבה","קוטג'","קפה","אורז","שוקולד","טונה","שמן"];
 
-function imgSrcs(code){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p.replace(/\.200\.jpg$/,".400.jpg"));
-  for(const t of EXTRA_IMG)a.push(t.replace("{code}",code));return a}
+function imgSrcs(code,name){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p.replace(/\.200\.jpg$/,".400.jpg"));
+  for(const t of EXTRA_IMG)a.push(t.replace("{code}",code));
+  if(name&&!NOT_LOOSE.test(name)){const n=" "+norm(name);for(const [re,u] of GENERIC)if(re.test(n)){a.push(GEN+u);break}}
+  return a}
+// stock photos (Unsplash license) for loose produce and fresh meat without a package photo, matched by name
+const NOT_LOOSE=/חתוכ|רסק|מרוסק|שימור|קפוא|ממרח|מיובש|משומר|רוטב|מיץ|חטיף|צ.?יפס|\d+ ?(גר|ג\b|מ"ל)/;
+const GEN="https://images.unsplash.com/",GQ="?w=400&q=70&auto=format&fit=crop";
+const GENERIC=[
+ [/^ (עגבני|עגבניה|עגבניות)/,"photo-1546094096-0df4bcaaa337"+GQ],
+ [/^ (בננה|בננות)/,"photo-1571771894821-ce9b6c11b08e"+GQ],
+ [/^ (חזה עוף|שניצל עוף|פילה עוף)/,"photo-1604503468506-a8da13d82791"+GQ]];
 // extra catalog image sources (by barcode), empty unless the site owner chooses to add one
 const EXTRA_IMG=[];
 function nextImg(el){const l=(el.dataset.alt||"").split("|").filter(Boolean);if(l.length){el.dataset.alt=l.slice(1).join("|");el.src=l[0]}
   else el.replaceWith(Object.assign(document.createElement("span"),{className:"ph",textContent:el.dataset.ph}))}
-function thumb(code,name){const l=imgSrcs(code),ph=esc((name||"?").trim()[0]||"?");
+function thumb(code,name){const l=imgSrcs(code,name),ph=esc((name||"?").trim()[0]||"?");
   return `<div class="thumb">${l.length?`<img loading="lazy" alt="" src="${l[0]}" data-alt="${l.slice(1).join("|")}" data-ph="${ph}" onerror="nextImg(this)">`:`<span class="ph">${ph}</span>`}</div>`}
+const plink=code=>"#/p/"+encodeURIComponent(code);
 
 async function boot(){
-  $("pdback").onclick=e=>{if(e.target.id==="pdback")closeDetail()};
   try{INDEX=await (await fetch("data/index.json",{cache:"no-cache"})).json()}
-  catch(e){$("meta").textContent="לא הצלחנו לטעון את הנתונים. נסו לרענן את הדף.";return}
-  fetch("data/images.json",{cache:"no-cache"}).then(r=>r.ok?r.json():{}).then(j=>{IMAGES=j;render()}).catch(()=>{});
+  catch(e){$("meta").textContent="לא הצלחנו לטעון את הנתונים. נסו לרענן את הדף.";route();return}
+  fetch("data/images.json",{cache:"no-cache"}).then(r=>r.ok?r.json():{}).then(j=>{IMAGES=j;renderPage()}).catch(()=>{});
   const sel=$("city");
   INDEX.cities.slice().sort((a,b)=>a.name.localeCompare(b.name,"he")).forEach(c=>sel.add(new Option(c.name,c.name)));
   sel.value=ls.get("city","ירושלים"); if(!sel.value)sel.selectedIndex=0;
@@ -301,8 +394,9 @@ async function boot(){
 
 async function loadCity(){
   const c=INDEX.cities.find(x=>x.name===$("city").value);
+  CITY=null;
   $("meta").textContent=`טוען את המחירים של ${c.name}…`;$("q").disabled=true;
-  $("products").innerHTML='<div class="hint loading"><span class="spin"></span>טוען מחירים מכל הסניפים בעיר…</div>';
+  route();
   let d=await (await fetch("data/"+c.file,{cache:"no-cache"})).json();
   if(d.city!==c.name){INDEX=await (await fetch("data/index.json",{cache:"no-cache"})).json();
     const c2=INDEX.cities.find(x=>x.name===c.name);if(!c2){location.reload();return}
@@ -312,12 +406,100 @@ async function loadCity(){
   CITY={...d,carry,fresh,minPrice,minStore,byStore,code2i:new Map(d.products.map((p,i)=>[p[0],i])),search:d.products.map(p=>norm(p[1]+" "+p[2]+" "+p[0]))};
   CITY.cat=CITY.products.map((_,i)=>catOf(i));
   const chains=[...new Set(d.stores.map(s=>s.chain))];
-  $("meta").textContent=`${d.stores.length} סניפים של ${chains.length} רשתות · ${n.toLocaleString("he-IL")} מוצרים · עודכן ${INDEX.updated}`;
+  $("meta").textContent=`${d.stores.length} סניפים של ${chains.length} רשתות ב${d.city} · ${n.toLocaleString("he-IL")} מוצרים · עודכן ${INDEX.updated}`;
+  $("herop").textContent=`כל מוצר, כל המחירים, בכל ${d.stores.length} הסניפים ב${d.city}.`;
   $("q").disabled=false;
   if(!Object.keys(basket).length&&!ls.get("touched",false))loadSample();
-  showProducts();render();
+  route();
 }
 
+/* ---------- pages ---------- */
+let navs=0;
+function route(){
+  const h=decodeURIComponent(location.hash.replace(/^#\/?/,"")).split("/");
+  const prev=PAGE+"|"+(route.arg||"");
+  PAGE={"":"home",cats:"cats",cart:"cart",fav:"fav",p:"p"}[h[0]]||"home";route.arg=h[1]||"";
+  if(prev!==PAGE+"|"+route.arg){catLimit=60;window.scrollTo(0,0)}
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="pg-"+PAGE));
+  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.dataset.nav===PAGE));
+  renderPage();
+}
+function renderPage(){
+  counts();dock();
+  if(PAGE==="home")renderHome();
+  else if(PAGE==="cats")renderCats(route.arg);
+  else if(PAGE==="p")renderProduct(route.arg);
+  else if(PAGE==="cart"){renderBasket();renderStores()}
+  else if(PAGE==="fav")renderFavs();
+}
+const waitBox=()=>'<div class="hint loading"><span class="spin"></span>טוען מחירים מכל הסניפים בעיר…</div>';
+
+function catTiles(){return `<div class="cats">${CATS.map(c=>`<a class="cat" href="#/cats/${c.id}"><span>${c.ic}</span>${c.name}</a>`).join("")}</div>`}
+function catRow(on){return `<div class="catrow"><a class="cat${on?"":" on"}" href="#/cats">הכל</a>${CATS.map(c=>`<a class="cat${on===c.id?" on":""}" href="#/cats/${c.id}"><span>${c.ic}</span>${c.name}</a>`).join("")}</div>`}
+function byPopular(filter){const ids=[];for(let i=0;i<CITY.products.length;i++)if(!filter||filter(i))ids.push(i);ids.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);return ids}
+
+function renderHome(){
+  const box=$("home");if(!CITY){box.innerHTML=`<h2>קטגוריות מוצרים</h2>${catTiles()}<div style="margin-top:20px">${waitBox()}</div>`;return}
+  const t=$("q").value.trim();
+  if(t){const hits=find(t,60);
+    box.innerHTML=`<h2>תוצאות עבור "${esc(t)}" <small>${hits.length>=60?"60+":hits.length} מוצרים ב${esc(CITY.city)}</small></h2>`+(hits.length?grid(hits):`<div class="hint">לא מצאנו מוצר כזה בסניפים של ${esc(CITY.city)}. נסו מילה אחרת או ברקוד.</div>`);
+    return}
+  box.innerHTML=`<div class="chips">${POPULAR.map(p=>`<button class="chip" data-act="chip" data-q="${esc(p)}">${esc(p)}</button>`).join("")}</div>
+    <h2>קטגוריות מוצרים</h2>${catTiles()}
+    <h2>מוצרים פופולריים <small>הנמכרים ביותר ב${esc(CITY.city)}</small></h2>${grid(byPopular().slice(0,24))}`;
+}
+function renderCats(id){
+  const box=$("pg-cats"),c=CATS.find(x=>x.id===id);
+  const head=`<h1>${c?c.ic+" "+esc(c.name):"כל המוצרים"} ${CITY?`<small>ב${esc(CITY.city)}</small>`:""}</h1>${catRow(c&&c.id)}`;
+  if(!CITY){box.innerHTML=head+waitBox();return}
+  const ids=byPopular(c?i=>CITY.cat[i]===c.id:null);
+  box.innerHTML=head+`<p class="meta" style="margin:0 0 12px">${ids.length.toLocaleString("he-IL")} מוצרים, מהנמכר ביותר</p>`+(ids.length?grid(ids.slice(0,catLimit)):`<div class="hint">אין מוצרים בקטגוריה הזאת ב${esc(CITY.city)}.</div>`)+(ids.length>catLimit?`<button class="more" data-act="more">הצג עוד מוצרים</button>`:"");
+}
+function renderFavs(){
+  const box=$("pg-fav");const head=`<h1>המועדפים שלי</h1>`;
+  if(!favs.length){box.innerHTML=head+`<div class="hint">עוד אין מועדפים. לחצו על ♡ בכרטיס של מוצר כדי לשמור אותו כאן.</div>`;return}
+  if(!CITY){box.innerHTML=head+waitBox();return}
+  const ids=favs.filter(c=>CITY.code2i.has(c)).map(c=>CITY.code2i.get(c));const miss=favs.length-ids.length;
+  box.innerHTML=head+(ids.length?grid(ids):"")+(miss?`<p class="meta" style="margin-top:14px">${miss} מהמועדפים לא נמכרים באף סניף ב${esc(CITY.city)}.</p>`:"");
+}
+
+function stepper(i,q){return `<div class="step"><button data-act="add" data-i="${i}" aria-label="הוסף עוד">+</button><span>${q} <small>בסל</small></span><button data-act="sub" data-i="${i}" aria-label="${q>1?"הפחת":"הסר מהסל"}">${q>1?"−":"🗑"}</button></div>`}
+function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products[i],q=basket[p[0]]?.q,f=favs.includes(p[0]);
+  const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;
+  return `<article class="prod">
+    <button class="heart${f?" on":""}" data-act="fav" data-c="${esc(p[0])}" aria-label="${f?"הסר ממועדפים":"הוסף למועדפים"}" aria-pressed="${f}">${f?"♥":"♡"}</button>
+    <a class="pimg" href="${plink(p[0])}" tabindex="-1">${thumb(p[0],p[1])}</a>
+    <a class="pname" href="${plink(p[0])}" title="${esc(p[1])}">${esc(p[1])}</a>
+    <div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))||"&nbsp;"}</div>
+    <div class="cheap">${logo(st.chain,"sm")}<span>${more>0?"הכי זול ב":"רק ב"}${esc(st.chain||"")}</span></div>
+    <div class="pp">${fmt(CITY.minPrice[i])}</div>
+    <div class="ppn">${more>0?`נמכר בעוד ${more} סניפים`:`רק בסניף ${esc(st.name?sname(st):"")}`}</div>
+    <div class="pbtns">${q?stepper(i,q):`<button class="btn" data-act="add" data-i="${i}">הוסף לסל</button>`}<a class="btn soft" href="${plink(p[0])}">השוואת מחירים</a></div>
+  </article>`}).join("")}</div>`}
+
+function renderProduct(code){
+  const box=$("pg-p");const back=`<button class="back" data-act="back">→ חזרה</button>`;
+  if(!CITY){box.innerHTML=back+waitBox();return}
+  const i=CITY.code2i.get(code);
+  if(i==null){box.innerHTML=back+`<div class="hint">המוצר הזה לא נמכר באף סניף ב${esc(CITY.city)}.</div>`;return}
+  const p=CITY.products[i],rows=[];
+  CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
+  rows.sort((a,b)=>a[0]-b[0]);const min=rows[0][0],max=rows[rows.length-1][0];
+  const one=rows.length===1?CITY.stores[rows[0][1]]:null,q=basket[code]?.q,f=favs.includes(code);
+  box.innerHTML=back+`<div class="cmp">
+    <aside class="cmp-side">${thumb(p[0],p[1])}<h1>${esc(p[1])}</h1><div class="pmeta">${esc([p[2],p[3],"ברקוד "+p[0]].filter(Boolean).join(" · "))}</div>
+      <div><span class="meta">הכי זול ב${esc(CITY.city)}</span><div class="pp">${fmt(min)}</div></div>
+      ${q?stepper(i,q):`<button class="btn" data-act="add" data-i="${i}">הוסף לסל</button>`}
+      <button class="heart${f?" on":""}" data-act="fav" data-c="${esc(code)}" aria-pressed="${f}">${f?"♥ במועדפים":"♡ הוסף למועדפים"}</button>
+    </aside>
+    <div>
+      <h2 style="margin-top:0">השוואת מחירים ב${esc(CITY.city)}</h2>
+      <div class="sum">${one?`קיים רק בסניף ${esc(one.chain)} · ${esc(sname(one))}`:`נמכר ב־${rows.length} סניפים · הפרש של עד ${fmt(max-min)} בין הזול ליקר`}</div>
+      ${rows.map(([pr,si,stt])=>{const s=CITY.stores[si];return `<div class="row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}${pr===min?" 🏆":""}</b><small>${esc(sname(s))}${s.online?" · + משלוח":""}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הזול ביותר":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
+    </div></div>`;
+}
+
+/* ---------- basket ---------- */
 function status(m,i){const v=m.get(i);if(!v)return "none";const days=v[1];
   if(days>=0&&days<=3)return "in";
   const others=CITY.carry[i]-1;
@@ -329,113 +511,88 @@ function find(t,limit){const w=norm(t).split(" ").filter(Boolean);if(!w.length)r
   const out=[];for(let i=0;i<CITY.search.length;i++){const s=CITY.search[i];if(w.every(x=>s.includes(x)))out.push(i)}
   out.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);return out.slice(0,limit)}
 
-function catBar(){return `<div class="cats">${CATS.map(c=>`<button class="cat${CAT===c.id?" on":""}" data-c="${c.id}"><span>${c.ic}</span>${c.name}</button>`).join("")}</div>`}
-function inCat(i){return !CAT||CITY.cat[i]===CAT}
-function showProducts(){
-  if(!CITY)return;const t=$("q").value.trim();const box=$("products");
-  if(CAT&&!t){const c=CATS.find(x=>x.id===CAT);const ids=[];
-    for(let i=0;i<CITY.products.length;i++)if(CITY.cat[i]===CAT)ids.push(i);
-    ids.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);
-    $("ptitle").innerHTML=`${c.ic} ${esc(c.name)} <small>${ids.length.toLocaleString("he-IL")} מוצרים ב${esc(CITY.city)}</small>`;
-    box.innerHTML=catBar()+(ids.length?grid(ids.slice(0,catLimit)):`<div class="hint">אין מוצרים בקטגוריה הזאת ב${esc(CITY.city)}.</div>`)+(ids.length>catLimit?`<button class="more" id="catmore">הצג עוד</button>`:"");
-    const m=$("catmore");if(m)m.onclick=()=>{catLimit+=60;showProducts()};
-  }else if(!t){
-    $("ptitle").innerHTML="מה קונים היום?";
-    const top=[];for(let i=0;i<CITY.products.length;i++)top.push(i);
-    top.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);
-    box.innerHTML=catBar()+`<div class="hint">חפשו מוצר בשורת החיפוש, בחרו קטגוריה, או התחילו מאחד מאלה:<div class="chips">${POPULAR.map(p=>`<button class="chip" data-q="${esc(p)}">${esc(p)}</button>`).join("")}</div></div><h2 style="margin-top:20px">הנמכרים ביותר ב${esc(CITY.city)}</h2>`+grid(top.slice(0,24));
-  }else{
-    const hits=find(t,CAT?5000:60).filter(inCat).slice(0,60);const c=CATS.find(x=>x.id===CAT);
-    $("ptitle").innerHTML=`תוצאות עבור "${esc(t)}"${c?" ב"+esc(c.name):""} <small>${hits.length>=60?"60+":hits.length} מוצרים</small>`;
-    box.innerHTML=catBar()+(hits.length?grid(hits):`<div class="hint">לא מצאנו מוצר כזה בסניפים של ${esc(CITY.city)}. נסו מילה אחרת או ברקוד.</div>`);
-  }
-  box.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{CAT=CAT===b.dataset.c?null:b.dataset.c;catLimit=60;showProducts()});
-  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{$("q").value=b.dataset.q;showProducts()});
-  box.querySelectorAll(".add").forEach(b=>b.onclick=e=>{e.stopPropagation();add(+b.dataset.i)});
-  box.querySelectorAll(".sub").forEach(b=>b.onclick=e=>{e.stopPropagation();sub(+b.dataset.i)});
-  box.querySelectorAll(".prod").forEach(a=>a.onclick=()=>detail(+a.dataset.i));
-}
-function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products[i],q=basket[p[0]]?.q;
-  return `<article class="prod" data-i="${i}">${thumb(p[0],p[1])}<div><div class="pname" title="${esc(p[1])}">${esc(p[1])}</div><div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))}</div></div>
-  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap">${logo(st.chain,"sm")}${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name?sname(st):"")}`}</div>`})()}${q?`<div class="step"><button class="add" data-i="${i}" aria-label="הוסף עוד">+</button><span>${q}</span><button class="sub" data-i="${i}" aria-label="${q>1?"הפחת":"הסר מהסל"}">${q>1?"−":"🗑"}</button></div>`:`<button class="add" data-i="${i}" aria-label="הוסף לסל">+</button>`}</div></article>`}).join("")}</div>`}
-
-function detail(i){const p=CITY.products[i],rows=[];
-  CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
-  rows.sort((a,b)=>a[0]-b[0]);const min=rows.length?rows[0][0]:0;
-  const one=rows.length===1?CITY.stores[rows[0][1]]:null;
-  $("pd").innerHTML=`<div class="pd-head">${thumb(p[0],p[1])}<div><h3>${esc(p[1])}</h3><p>${esc([p[2],p[3]].filter(Boolean).join(" · "))}</p></div><button class="pd-x" aria-label="סגור">✕</button></div>
-  ${one?`<div class="pd-only">קיים רק בסניף ${esc(one.chain)} · ${esc(sname(one))}</div>`:`<div class="pd-only">נמכר ב־${rows.length} סניפים ב${esc(CITY.city)} · הכי זול ב${esc(CITY.stores[rows[0][1]].chain)}</div>`}
-  ${rows.map(([pr,si,stt],k)=>{const s=CITY.stores[si];return `<div class="pd-row${pr===min?" best":""}">${logo(s.chain)}<div class="nm"><b>${esc(s.chain)}</b><small>${esc(sname(s))}${s.online?" · + משלוח":""}${stt==="out"?" · כנראה חסר במלאי":stt==="maybe"?" · לא בטוח במלאי":""}</small></div><div class="pr">${fmt(pr)}<small>${pr===min?"הכי זול":"+"+fmt(pr-min)}</small></div></div>`}).join("")}
-  <button class="pd-add">הוסף לסל</button>`;
-  $("pdback").classList.add("on");
-  $("pd").querySelector(".pd-x").onclick=closeDetail;$("pd").querySelector(".pd-add").onclick=()=>{add(i);closeDetail()}}
-function closeDetail(){$("pdback").classList.remove("on")}
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDetail()});
-function sub(i){const c=CITY.products[i][0];if(!basket[c])return;if(--basket[c].q<=0)delete basket[c];save();showProducts()}
-function add(i){const p=CITY.products[i];basket[p[0]]=basket[p[0]]||{q:0,name:p[1],unit:p[3]};basket[p[0]].q++;save();showProducts()}
+function sub(i){const c=CITY.products[i][0];if(!basket[c])return;if(--basket[c].q<=0)delete basket[c];save()}
+function add(i){const p=CITY.products[i];basket[p[0]]=basket[p[0]]||{q:0,name:p[1],unit:p[3]};basket[p[0]].q++;save()}
 function loadSample(){basket={};for(const n of SAMPLE){const i=find(n,1)[0];if(i!=null){const p=CITY.products[i];basket[p[0]]={q:1,name:p[1],unit:p[3]}}}ls.set("basket2",basket)}
-function save(){ls.set("basket2",basket);ls.set("touched",true);render()}
+function save(){ls.set("basket2",basket);ls.set("touched",true);renderPage()}
+function toggleFav(code){favs=favs.includes(code)?favs.filter(c=>c!==code):[...favs,code];ls.set("favs",favs);renderPage()}
+function counts(){const n=Object.values(basket).reduce((a,b)=>a+b.q,0);$("ccount").textContent=n||"";$("fcount").textContent=favs.length||""}
 
 function onlyStore(code){if(!CITY||!CITY.code2i.has(code))return null;const i=CITY.code2i.get(code);
   if(CITY.carry[i]!==1)return null;const si=CITY.byStore.findIndex(m=>m.has(i));return CITY.stores[si]||null}
 function renderBasket(){
   const ul=$("list");const codes=Object.keys(basket);
   const items=codes.reduce((a,c)=>a+basket[c].q,0);$("bcount").textContent=items?`${items} פריטים`:"";
-  if(!codes.length){ul.innerHTML='<li class="empty">הסל ריק. הוסיפו מוצרים עם הכפתור +</li>';return}
-  ul.innerHTML="";
-  codes.forEach(code=>{const b=basket[code];const li=document.createElement("li");li.className="bi";
-    const inCity=CITY&&CITY.code2i.has(code);
-    li.innerHTML=`${thumb(code,b.name)}<div class="nm">${esc(b.name)}<small>${esc(b.unit||"")}${CITY&&!inCity?" · לא נמכר באף סניף בעיר":""}</small>${(()=>{const o=onlyStore(code);return o?`<small class="only">נמכר רק ב${esc(o.chain)} · ${esc(sname(o))}</small>`:""})()}</div>
-      <div class="qty"><button aria-label="הוסף">+</button><span>${b.q}</span><button aria-label="${b.q>1?"הפחת":"הסר מהסל"}">${b.q>1?"−":"🗑"}</button></div>`;
-    const [plus,minus]=li.querySelectorAll(".qty button");
-    plus.onclick=()=>{b.q++;save();showProducts()};
-    minus.onclick=()=>{b.q--;if(b.q<=0)delete basket[code];save();showProducts()};
-    ul.appendChild(li)});
+  if(!codes.length){ul.innerHTML='<li class="hint" style="border:0;padding:6px 0">הסל ריק. <a href="#/">חפשו מוצרים</a> והוסיפו אותם לסל.</li>';return}
+  ul.innerHTML=codes.map(code=>{const b=basket[code],inCity=CITY&&CITY.code2i.has(code),o=onlyStore(code);
+    return `<li class="bi">${thumb(code,b.name)}<a class="nm" href="${plink(code)}">${esc(b.name)}<small>${esc(b.unit||"")}${CITY&&!inCity?" · לא נמכר באף סניף בעיר":""}</small>${o?`<small class="only">נמכר רק ב${esc(o.chain)} · ${esc(sname(o))}</small>`:""}</a>
+      <div class="qty"><button data-act="bplus" data-c="${esc(code)}" aria-label="הוסף">+</button><span>${b.q}</span><button data-act="bminus" data-c="${esc(code)}" aria-label="${b.q>1?"הפחת":"הסר מהסל"}">${b.q>1?"−":"🗑"}</button></div></li>`}).join("");
 }
 
-function renderStores(){
-  const box=$("stores"),dock=$("dock");
-  const codes=CITY?Object.keys(basket).filter(c=>CITY.code2i.has(c)):[];
-  if(!codes.length){box.innerHTML='<div class="hint">הוסיפו מוצרים לסל כדי לראות איזה סניף הכי זול.</div>';dock.classList.remove("on");$("rtitle").textContent="איפה הכי זול";return}
-  $("rtitle").textContent=`איפה הכי זול ב${CITY.city}`;
+function rank(){
+  const codes=CITY?Object.keys(basket).filter(c=>CITY.code2i.has(c)):[];if(!codes.length)return null;
   const rows=CITY.stores.map((s,si)=>{const m=CITY.byStore[si];let total=0;const cnt={in:0,maybe:0,out:0,none:0};
     const lines=codes.map(code=>{const i=CITY.code2i.get(code),v=m.get(i),st=status(m,i),q=basket[code].q;cnt[st]++;if(v)total+=v[0]*q;return{code,v,st,q}});
     if(s.online)total+=s.online;return{s,total,cnt,lines}}).filter(r=>r.cnt.none<codes.length);
-  rows.sort((a,b)=>a.cnt.none-b.cnt.none||a.total-b.total);
+  if(!rows.length)return null;
+  rows.sort((a,b)=>a.cnt.none-b.cnt.none||a.total-b.total);return{codes,rows}}
+
+function renderStores(){
+  const box=$("stores");
+  $("cartsum").innerHTML="";
+  if(!CITY){box.innerHTML=waitBox();return}
+  const R=rank();
+  if(R){const b=R.rows[0];$("cartsum").innerHTML=`<div class="cartsum">${logo(b.s.chain)}<div class="t"><small>🏆 הסל הכי זול ב${esc(CITY.city)}</small><b>${fmt(b.total)}</b> · ${esc(b.s.chain)} ${esc(sname(b.s))}</div><button class="btn" data-act="tobest">לכל הסניפים ↓</button></div>`}
+  if(!R){box.innerHTML='<div class="hint">הוסיפו מוצרים לסל כדי לראות איזה סניף הכי זול.</div>';$("rtitle").textContent="איפה הכי זול";return}
+  const {codes,rows}=R;
+  $("rtitle").textContent=`איפה הכי זול ב${CITY.city}`;
   const best=rows[0],full=rows.filter(r=>r.cnt.none===best.cnt.none),worst=full[full.length-1];
   const shown=showAllStores?rows:rows.slice(0,8);
-  box.innerHTML="";
   const only=codes.map(c=>[c,onlyStore(c)]).filter(x=>x[1]);
-  if(only.length){const n=document.createElement("div");n.className="onlybox";
-    n.innerHTML=`<b>שימו לב:</b>${only.map(([c,o])=>`<div>${esc(basket[c].name)} נמכר רק ב${esc(o.chain)} · ${esc(sname(o))}</div>`).join("")}`;box.appendChild(n)}
-  shown.forEach((r,k)=>{const d=document.createElement("div");d.className="st"+(k===0?" best":"");if(k===0)d.id="beststore";
-    const tags=[];
+  let html=only.length?`<div class="onlybox"><b>שימו לב:</b>${only.map(([c,o])=>`<div>${esc(basket[c].name)} נמכר רק ב${esc(o.chain)} · ${esc(sname(o))}</div>`).join("")}</div>`:"";
+  html+=shown.map((r,k)=>{const tags=[];
     if(r.cnt.none)tags.push(`<span class="tag r">${r.cnt.none} לא נמכרים בסניף</span>`);
     if(r.cnt.out)tags.push(`<span class="tag r">${r.cnt.out} כנראה חסרים</span>`);
     if(r.cnt.maybe)tags.push(`<span class="tag a">${r.cnt.maybe} לא בטוח במלאי</span>`);
     if(!r.cnt.none&&!r.cnt.out&&!r.cnt.maybe)tags.push('<span class="tag">הכל במלאי</span>');
     const same=r.cnt.none===best.cnt.none;
     const note=k===0?(worst!==best?`חוסכים ${fmt(worst.total-best.total)}`:"הכי זול"):same?`+${fmt(r.total-best.total)}`:"חסרים מוצרים";
-    d.innerHTML=`<div class="row"><span class="badge" style="background:${chainColor(r.s.chain)}">${k+1}</span>${logo(r.s.chain)}
+    return `<div class="st${k===0?" best":""}"${k===0?' id="beststore"':""}>
+      ${k===0?'<div class="winner">🏆 הסל הכי זול בעיר</div>':""}
+      <div class="top"><span class="rank">${k+1}</span>${logo(r.s.chain)}
       <div class="who"><b>${esc(r.s.chain)} · ${esc(sname(r.s))}</b><small>${r.s.online?`🚚 כולל משלוח ${fmt(r.s.online)}`:esc(r.s.address||r.s.sub||"")}</small></div>
-      <div class="price"><b>${fmt(r.total)}</b><small>${note}</small></div></div>
+      <div class="tot"><b>${fmt(r.total)}</b><small>${note}</small></div></div>
       <div class="tags">${tags.join("")}</div>
       <details><summary>פירוט לפי מוצר</summary><table class="lines">${r.s.online?`<tr><td>🚚</td><td>דמי משלוח<small>מחיר משוער, משתנה לפי חלון הזמן ואזור המשלוח</small></td><td class="n">${fmt(r.s.online)}</td></tr>`:""}${r.lines.map(l=>{const b=basket[l.code],s=ST[l.st];
-        return `<tr><td class="${s[2]}">${s[0]}</td><td>${esc(b.name)}${l.q>1?" ×"+l.q:""}<small>${s[1]}${l.v&&l.v[1]>=0?" · נמכר לאחרונה "+(l.v[1]===0?"היום":l.v[1]===1?"אתמול":"לפני "+l.v[1]+" ימים"):""}</small></td><td class="n">${l.v?fmt(l.v[0]*l.q):""}</td></tr>`}).join("")}</table></details>`;
-    box.appendChild(d)});
-  if(rows.length>8){const b=document.createElement("button");b.className="more";b.textContent=showAllStores?"הצג פחות":`הצג את כל ${rows.length} הסניפים`;b.onclick=()=>{showAllStores=!showAllStores;renderStores()};box.appendChild(b)}
-  $("docktxt").innerHTML=`הכי זול: <b>${fmt(best.total)}</b><br>${esc(best.s.chain)} · ${esc(sname(best.s))}`;
-  dock.classList.add("on");
+        return `<tr><td class="${s[2]}">${s[0]}</td><td>${esc(b.name)}${l.q>1?" ×"+l.q:""}<small>${s[1]}${l.v&&l.v[1]>=0?" · נמכר לאחרונה "+(l.v[1]===0?"היום":l.v[1]===1?"אתמול":"לפני "+l.v[1]+" ימים"):""}</small></td><td class="n">${l.v?fmt(l.v[0]*l.q):""}</td></tr>`}).join("")}</table></details></div>`}).join("");
+  if(rows.length>8)html+=`<button class="more" data-act="showall">${showAllStores?"הצג פחות":`הצג את כל ${rows.length} הסניפים`}</button>`;
+  box.innerHTML=html;
 }
-function render(){renderBasket();renderStores()}
+function dock(){
+  const R=PAGE!=="cart"&&rank(),d=$("dock");
+  d.classList.toggle("on",!!R);document.body.classList.toggle("docked",!!R);
+  if(R){const b=R.rows[0];$("docktxt").innerHTML=`הסל הכי זול: <b>${fmt(b.total)}</b> · ${esc(b.s.chain)} ${esc(sname(b.s))}`}
+}
 
-let timer;$("q").oninput=()=>{clearTimeout(timer);timer=setTimeout(showProducts,150)};
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if(!el)return;const a=el.dataset.act;
+  if(a==="add")add(+el.dataset.i);
+  else if(a==="sub")sub(+el.dataset.i);
+  else if(a==="fav")toggleFav(el.dataset.c);
+  else if(a==="chip"){$("q").value=el.dataset.q;renderHome()}
+  else if(a==="more"){catLimit+=60;renderPage()}
+  else if(a==="showall"){showAllStores=!showAllStores;renderStores()}
+  else if(a==="sample"){if(CITY){loadSample();save()}}
+  else if(a==="clear"){basket={};save()}
+  else if(a==="bplus"){basket[el.dataset.c].q++;save()}
+  else if(a==="bminus"){const b=basket[el.dataset.c];if(--b.q<=0)delete basket[el.dataset.c];save()}
+  else if(a==="tobest")$("rtitle").scrollIntoView({behavior:"smooth",block:"start"});
+  else if(a==="back"){navs>0?history.back():location.hash="#/"}
+});
+let timer;$("q").oninput=()=>{clearTimeout(timer);timer=setTimeout(renderHome,150)};
 $("q").onkeydown=e=>{if(e.key==="Enter")$("q").blur()};
-$("sample").onclick=()=>{if(CITY){loadSample();save();showProducts()}};
-$("clear").onclick=()=>{basket={};save();showProducts()};
-$("dockbasket").onclick=()=>$("basketSec").scrollIntoView({behavior:"smooth",block:"start"});
-$("dockbtn").onclick=()=>document.getElementById("beststore")?.scrollIntoView({behavior:"smooth",block:"center"});
-boot();
+window.addEventListener("hashchange",()=>{navs++;route()});
+route();boot();
 </script>
 </body>
 </html>
