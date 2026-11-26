@@ -93,6 +93,9 @@ section h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font
 .from .cheap i{width:9px;height:9px;border-radius:50%;flex:none}
 .from b{display:block;font-family:var(--display);font-size:1.1rem;color:var(--ink);font-variant-numeric:tabular-nums}
 .add{border:0;background:var(--brand-2);color:#fff;border-radius:12px;width:40px;height:40px;font-size:1.4rem;font-weight:700;display:grid;place-items:center;flex:none}
+.step{display:flex;align-items:center;gap:4px;background:var(--brand-soft);border-radius:12px;flex:none}
+.step span{min-width:22px;text-align:center;font-weight:700;color:var(--brand-2);font-variant-numeric:tabular-nums}
+.step .sub{border:0;background:transparent;color:var(--brand-2);width:40px;height:40px;font-size:1.3rem;font-weight:700;border-radius:12px}
 .add.in{background:var(--brand-soft);color:var(--brand-2);font-size:1rem;width:auto;padding:0 10px}
 .hint{background:var(--card);border-radius:var(--r);padding:20px;color:var(--muted);box-shadow:var(--shadow)}
 .cats{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:6px;scrollbar-width:thin}
@@ -168,7 +171,7 @@ details:not([open]) summary::before{content:"◂ "}
   .search{padding-bottom:8px}.sbox input{padding:11px 0;font-size:1rem}
   .meta{font-size:.75rem;padding-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pfoot{flex-wrap:wrap}.pfoot .from{flex:1 1 100%}
-  .pfoot .add{width:100%;height:38px;font-size:1.2rem}.pfoot .add.in{width:100%}
+  .pfoot .add{width:100%;height:38px;font-size:1.2rem}.pfoot .add.in{width:100%}.pfoot .step{width:100%;justify-content:space-between}.pfoot .step .add{width:38px}
   .cat{min-width:74px;padding:8px 6px;font-size:.75rem}.cat span{font-size:1.3rem}
   .dock .gut{gap:8px}.dock button{padding:11px 12px;font-size:.9rem}
   .dock button.alt{background:var(--brand-soft);color:var(--brand-2)}
@@ -348,11 +351,12 @@ function showProducts(){
   box.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{CAT=CAT===b.dataset.c?null:b.dataset.c;catLimit=60;showProducts()});
   box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{$("q").value=b.dataset.q;showProducts()});
   box.querySelectorAll(".add").forEach(b=>b.onclick=e=>{e.stopPropagation();add(+b.dataset.i)});
+  box.querySelectorAll(".sub").forEach(b=>b.onclick=e=>{e.stopPropagation();sub(+b.dataset.i)});
   box.querySelectorAll(".prod").forEach(a=>a.onclick=()=>detail(+a.dataset.i));
 }
 function grid(ids){return `<div class="grid">${ids.map(i=>{const p=CITY.products[i],q=basket[p[0]]?.q;
   return `<article class="prod" data-i="${i}">${thumb(p[0],p[1])}<div><div class="pname" title="${esc(p[1])}">${esc(p[1])}</div><div class="pmeta">${esc([p[2],p[3]].filter(Boolean).join(" · "))}</div></div>
-  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap">${logo(st.chain,"sm")}${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name?sname(st):"")}`}</div>`})()}<button class="add${q?" in":""}" data-i="${i}" aria-label="הוסף לסל">${q?"בסל ×"+q:"+"}</button></div></article>`}).join("")}</div>`}
+  <div class="pfoot">${(()=>{const st=CITY.stores[CITY.minStore[i]]||{},more=CITY.carry[i]-1;return `<div class="from"><span class="cheap">${logo(st.chain,"sm")}${more>0?"הכי זול: ":"רק ב"}${esc(st.chain||"")}</span><b>${fmt(CITY.minPrice[i])}</b>${more>0?`עוד ${more} סניפים`:`קיים רק בסניף ${esc(st.name?sname(st):"")}`}</div>`})()}${q?`<div class="step"><button class="add" data-i="${i}" aria-label="הוסף עוד">+</button><span>${q}</span><button class="sub" data-i="${i}" aria-label="${q>1?"הפחת":"הסר מהסל"}">${q>1?"−":"🗑"}</button></div>`:`<button class="add" data-i="${i}" aria-label="הוסף לסל">+</button>`}</div></article>`}).join("")}</div>`}
 
 function detail(i){const p=CITY.products[i],rows=[];
   CITY.byStore.forEach((m,si)=>{const v=m.get(i);if(v)rows.push([v[0],si,status(m,i)])});
@@ -366,6 +370,7 @@ function detail(i){const p=CITY.products[i],rows=[];
   $("pd").querySelector(".pd-x").onclick=closeDetail;$("pd").querySelector(".pd-add").onclick=()=>{add(i);closeDetail()}}
 function closeDetail(){$("pdback").classList.remove("on")}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDetail()});
+function sub(i){const c=CITY.products[i][0];if(!basket[c])return;if(--basket[c].q<=0)delete basket[c];save();showProducts()}
 function add(i){const p=CITY.products[i];basket[p[0]]=basket[p[0]]||{q:0,name:p[1],unit:p[3]};basket[p[0]].q++;save();showProducts()}
 function loadSample(){basket={};for(const n of SAMPLE){const i=find(n,1)[0];if(i!=null){const p=CITY.products[i];basket[p[0]]={q:1,name:p[1],unit:p[3]}}}ls.set("basket2",basket)}
 function save(){ls.set("basket2",basket);ls.set("touched",true);render()}
@@ -380,7 +385,7 @@ function renderBasket(){
   codes.forEach(code=>{const b=basket[code];const li=document.createElement("li");li.className="bi";
     const inCity=CITY&&CITY.code2i.has(code);
     li.innerHTML=`${thumb(code,b.name)}<div class="nm">${esc(b.name)}<small>${esc(b.unit||"")}${CITY&&!inCity?" · לא נמכר באף סניף בעיר":""}</small>${(()=>{const o=onlyStore(code);return o?`<small class="only">נמכר רק ב${esc(o.chain)} · ${esc(sname(o))}</small>`:""})()}</div>
-      <div class="qty"><button aria-label="הוסף">+</button><span>${b.q}</span><button aria-label="הפחת">−</button></div>`;
+      <div class="qty"><button aria-label="הוסף">+</button><span>${b.q}</span><button aria-label="${b.q>1?"הפחת":"הסר מהסל"}">${b.q>1?"−":"🗑"}</button></div>`;
     const [plus,minus]=li.querySelectorAll(".qty button");
     plus.onclick=()=>{b.q++;save();showProducts()};
     minus.onclick=()=>{b.q--;if(b.q<=0)delete basket[code];save();showProducts()};
