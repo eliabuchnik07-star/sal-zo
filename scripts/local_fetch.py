@@ -1,7 +1,7 @@
 """Runs on a computer in Israel, for chains whose price sites refuse servers abroad.
 
 Every run: downloads the newest full price file of every branch of these chains
-(Hatzi Hinam, Carrefour, and the laibcatalog chains: Victory, Machsanei HaShuk), and uploads
+(Hatzi Hinam, Carrefour, and the laibcatalog chains: Victory, Machsanei HaShuk, H. Cohen), and uploads
 one compact file per chain to the `local-data` branch of the repository. The hourly GitHub job
 (fetch_prices.py) reads those files and merges them into the site.
 
@@ -72,35 +72,27 @@ def carrefour():
 
 
 # ---------- laibcatalog.co.il (Victory, Machsanei HaShuk, H. Cohen) ----------
-def laib_store_and_stamp(name):
-    nums = re.findall(r"\d+", name.split(".")[0])
-    i = next(k for k, n in enumerate(nums) if len(n) >= 12 and k > 0)
-    return str(int(nums[i - 1])), nums[i][:12]
-
-
 def laib(chain_id, key, chain_name):
-    base = "https://laibcatalog.co.il/"
-
-    def links(ftype):
-        h = fp.get(f"{base}NBCompetitionRegulations.aspx?code={chain_id}&fileType={ftype}").decode("utf-8", "replace")
-        return [html.unescape(u).replace("\\", "/") for u in re.findall(r'href="(CompetitionRegulationsFiles[^"]+)"', h)]
-
-    st = sorted(links("storesfull"), key=lambda u: laib_store_and_stamp(u.rsplit("/", 1)[-1])[1])
+    """laibcatalog.co.il/<chain>/index.html reads a JSON list of files from /webapi/api/getfiles."""
+    base = "https://laibcatalog.co.il/webapi/"
+    files = json.loads(fp.get(f"{base}api/getfiles?edi={chain_id}").decode("utf-8-sig"))
+    st = sorted((f for f in files if f["fileType"] == "stores"), key=lambda f: f["fileDate"])
     if not st:
         raise RuntimeError(f"{key}: no files published on laibcatalog right now")
-    stores = fp.parse_stores(fp.text(fp.get(base + st[-1])), key, chain_name)
+    stores = fp.parse_stores(fp.text(fp.get(f"{base}{chain_id}/{st[-1]['fileName']}")), key, chain_name)
     latest = {}
-    for u in links("pricefull"):
-        sid, stamp = laib_store_and_stamp(u.rsplit("/", 1)[-1])
-        if sid in stores and (sid not in latest or stamp > latest[sid][0]):
-            latest[sid] = (stamp, u)
+    for f in files:
+        sid = str(int(f["branchNumber"]))
+        if f["fileType"] == "pricefull" and sid in stores and (sid not in latest or f["fileDate"] > latest[sid]["fileDate"]):
+            latest[sid] = f
     print(f"{key}: {len(stores)} stores, {len(latest)} price files", file=sys.stderr)
-    return [(stores[sid], fp.parse_items(fp.text(fp.get(base + u)))) for sid, (_, u) in latest.items()]
+    return [(stores[sid], fp.parse_items(fp.text(fp.get(f"{base}{chain_id}/{f['fileName']}")))) for sid, f in latest.items()]
 
 
 CHAINS = {"hazihinam": hazi_hinam, "carrefour": carrefour,
           "victory": lambda: laib("7290696200003", "victory", "ויקטורי"),
-          "mahsaneihashuk": lambda: laib("7290661400001", "mahsaneihashuk", "מחסני השוק")}
+          "mahsaneihashuk": lambda: laib("7290661400001", "mahsaneihashuk", "מחסני השוק"),
+          "hcohen": lambda: laib("7290455000004", "hcohen", "ח. כהן")}
 
 
 def upload(path, data, token):
@@ -119,38 +111,10 @@ def upload(path, data, token):
     urllib.request.urlopen(req, timeout=300).read()
 
 
-# ---------- daily: the government list of price sites (gov.il refuses servers abroad) ----------
-GOV_PAGE = "https://www.gov.il/he/pages/cpfta_prices_regulations"
-
-
-def gov_links(token):
-    """Once a day: save every outside link on the government page listing the chains' price sites.
-    check_chains.py (GitHub, daily) compares it with the sites we read and reports new chains."""
-    mark = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gov_checked.txt")
-    today = dt.date.today().isoformat()
-    try:
-        if open(mark).read().strip() == today:
-            return
-    except OSError:
-        pass
-    req = urllib.request.Request(GOV_PAGE, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "he"})
-    h = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "replace")
-    links = sorted({html.unescape(u) for u in re.findall(r'href="(https?://[^"]+)"', h)
-                    if "gov.il" not in u.split("/")[2]})
-    payload = {"fetched": dt.datetime.now().isoformat(timespec="minutes"), "page_size": len(h), "links": links}
-    upload("gov-links.json.gz", gzip.compress(json.dumps(payload, ensure_ascii=False).encode()), token)
-    open(mark, "w").write(today)
-    print("gov page:", len(links), "outside links", file=sys.stderr)
-
-
 def main():
     token = os.environ.get("SAL_ZO_TOKEN")
     if not token:
         sys.exit("missing SAL_ZO_TOKEN")
-    try:
-        gov_links(token)
-    except Exception as e:
-        print("gov page check failed:", e, file=sys.stderr)
     for key, fetch in CHAINS.items():
         try:
             rows = fetch()

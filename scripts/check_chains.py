@@ -12,37 +12,47 @@ CANDIDATES = ["RamiLevi", "osherad", "yohananof", "TivTaam", "Keshet", "doralon"
               "MegaMarket", "SuperYuda", "Shefa_Birkat_Hashem", "BareketMarket", "zolvebegadol", "maayan2000"]
 
 
-# price sites we already read; anything else on the government list is reported as a possible new chain
-KNOWN_HOSTS = ["prices.shufersal.co.il", "publishedprices.co.il", "binaprojects.com", "laibcatalog.co.il",
-               "prices.carrefour.co.il", "hazi-hinam.co.il"]
-
-
-IGNORE_HOSTS = ["facebook.", "twitter.", "x.com", "youtube.", "instagram.", "linkedin.", "whatsapp.", "t.me",
-                "google.", "apple.com", "microsoft.", "nevo.co.il", "knesset."]
+# The government list of price sites (gov.il/he/pages/cpfta_prices_regulations), read on 2026-11-26.
+# The page is built by JavaScript and refuses servers abroad, so it is copied here; compare it by hand now and then.
+# chain name on our site -> its price site; None = deliberately left out (with the reason)
+GOV_LIST = {
+    "קינג סטור": "kingstore.binaprojects.com", "מעיין 2000": "maayan2000.binaprojects.com",
+    "קרפור": "prices.carrefour.co.il", "דור אלון": "publishedprices: doralon",
+    "ויקטורי": "laibcatalog.co.il/victory", "זול ובגדול": "zolvebegadol.binaprojects.com",
+    "ח. כהן": "laibcatalog.co.il/hcohen", "טיב טעם": "publishedprices: TivTaam",
+    "מחסני השוק": "laibcatalog.co.il/mshuk", "חצי חינם": "shop.hazi-hinam.co.il",
+    "יוחננוף": "publishedprices: yohananof", "אושר עד": "publishedprices: osherad",
+    "סאלח דבאח": "publishedprices: SalachD", "סופר ספיר": "supersapir.binaprojects.com",
+    "סיטי מרקט": "citymarketkiryatgat.binaprojects.com", "סטופ מרקט": "publishedprices: Stop_Market",
+    "סופר ברקת": "superbareket.binaprojects.com", "פוליצר": "publishedprices: politzer",
+    "פרשמרקט": "publishedprices: freshmarket", "משנת יוסף": "ktshivuk.binaprojects.com",
+    "קשת טעמים": "publishedprices: Keshet", "רמי לוי": "publishedprices: RamiLevi",
+    "שופרסל": "prices.shufersal.co.il", "שוק העיר": "shuk-hayir.binaprojects.com",
+    "שפע ברכת השם": "shefabirkathashem.binaprojects.com",
+}
+NOT_YET = {
+    "וולט מרקט": "wolt.com: אתר בפורמט אחר, עוד לא נבדק",
+    "נתיב החסד": "app.netiv-hesed.com: אתר בפורמט אחר, עוד לא נבדק",
+    "יילו / סופר יודה (פז)": "publishedprices עם סיסמה",
+    "גוד פארם, סופר פארם": "פארם, לא סופרמרקט",
+}
+SITE_INDEX = "https://eliabuchnik07-star.github.io/sal-zo/data/index.json"
 
 
 def gov_report():
-    """The government page (saved daily by the computer in Israel): links to every chain's price site."""
-    import json, urllib.parse
+    """Every chain on the government list must have branches on the live site."""
+    import json
     try:
-        p = json.loads(fp.text(fp.get(fp.LOCAL_URL.format("gov-links"))))
+        have = json.loads(fp.get(SITE_INDEX)).get("chains", {})
     except Exception as e:
-        return [f"- לא הצלחתי לקרוא את רשימת הרשתות של משרד הכלכלה ({e}). האם המחשב בישראל דלוק?"], []
-    lines = [f"\n### רשימת משרד הכלכלה (נשמרה {p['fetched']})\n"]
-    alerts = []
-    age = dt.datetime.now() - dt.datetime.fromisoformat(p["fetched"])
-    if age > dt.timedelta(days=3):
-        alerts.append(f"- רשימת משרד הכלכלה לא עודכנה מאז {p['fetched']}.")
-    if not p["links"]:
-        alerts.append("- בדף של משרד הכלכלה לא נמצאו קישורים (אולי הדף נטען עם JavaScript). צריך לשנות את הבדיקה.")
-    for u in p["links"]:
-        host = urllib.parse.urlparse(u).netloc.lower()
-        if any(x in host for x in IGNORE_HOSTS):
-            continue
-        known = any(host == k or host.endswith("." + k) for k in KNOWN_HOSTS)
-        lines.append(f"- {'✅' if known else '🆕'} {u}")
-        if not known:
-            alerts.append(f"- אתר מחירים שאנחנו לא קוראים עדיין: {u}")
+        return [f"- לא הצלחתי לקרוא את האתר ({e})."], []
+    lines, alerts = ["\n### רשימת משרד הכלכלה מול האתר\n", "| רשת | אתר המחירים | סניפים באתר |", "|---|---|---|"], []
+    for name, src in GOV_LIST.items():
+        n = have.get(name, 0)
+        lines.append(f"| {name} | {src} | {n or '❌ 0'} |")
+        if not n:
+            alerts.append(f"- **{name}** ברשימת משרד הכלכלה, אבל אין לה סניפים באתר היום ({src}).")
+    lines += [f"| {k} | {v} | לא מחובר |" for k, v in NOT_YET.items()]
     return alerts, lines
 
 
