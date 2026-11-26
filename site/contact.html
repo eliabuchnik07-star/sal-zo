@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>צור קשר · סלסה פראייר</title>
+<meta name="description" content="צרו קשר עם סלסה פראייר: דיווח על מחיר, רשת חסרה או כל שאלה.">
+<meta name="theme-color" content="#176b38">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Rubik:wght@600;700;800&display=swap">
+<style>
+:root{--brand:#176b38;--brand-dk:#104b2b;--brand-soft:#eaf6df;--bg:#f7f9f6;--card:#fff;--ink:#17231b;--muted:#5f6f63;--line:#e6ebe6;--foot:#123f27;--display:"Rubik",system-ui,sans-serif;--body:"Heebo",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme: dark){:root{--brand:#3fb873;--brand-dk:#8fdcae;--brand-soft:#173527;--bg:#0f1512;--card:#18201c;--ink:#e8efeb;--muted:#9aaaa2;--line:#27322c;--foot:#0b2417;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.7;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--brand)}
+.wrap{width:100%;max-width:820px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--card);border-bottom:1px solid var(--line)}
+header .wrap{max-width:1200px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--brand);font-family:var(--display);font-weight:800;font-size:1.4rem;line-height:1}
+.logo img{width:44px;height:44px;border-radius:12px;background:var(--brand-soft)}
+.logo em{font-style:normal;color:#e0a100}
+.back{font-weight:700;text-decoration:none;white-space:nowrap}
+main{flex:1;padding-block:28px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px}
+h1{font-family:var(--display);color:var(--brand-dk);font-size:1.8rem;line-height:1.25;margin:0 0 6px}
+h2{font-family:var(--display);color:var(--brand-dk);font-size:1.2rem;margin:26px 0 8px}
+p{margin:0 0 10px}
+.date{color:var(--muted);font-size:.9rem;margin-bottom:18px}
+.n{font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums}
+footer{background:var(--foot);color:#fff;text-align:center;padding:24px 0}
+footer a{color:#cfe9bb;margin:0 8px}
+@media (max-width:600px){.card{padding:18px}h1{font-size:1.45rem}.logo{font-size:1.15rem}.logo img{width:38px;height:38px}}
+
+form{display:grid;gap:14px;margin-top:18px}
+label{display:grid;gap:6px;font-weight:700}
+input,textarea,select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%}
+textarea{min-height:150px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:3px solid var(--brand);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:600px){.row2{grid-template-columns:1fr}}
+button{font:inherit;font-weight:800;border:0;background:var(--brand);color:#fff;border-radius:12px;padding:14px;cursor:pointer;font-size:1.05rem}
+button:hover{background:var(--brand-dk)}
+.hp{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%);pointer-events:none}
+form{position:relative}
+.thanks{display:none;background:var(--brand-soft);color:var(--brand-dk);border-radius:12px;padding:14px 16px;font-weight:700;margin-top:14px}
+.thanks.on{display:block}
+.muted{color:var(--muted);font-size:.9rem}
+
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="logo" href="./"><img src="brand/mark.png" alt="">סלסה&nbsp;<em>פראייר</em></a><a class="back" href="./">← חזרה להשוואת המחירים</a></div></header>
+<main class="wrap"><div class="card">
+<h1>צור קשר</h1>
+<p>מצאתם מחיר לא נכון, חסרה רשת או סניף, או שיש לכם רעיון? כתבו לנו ונחזור אליכם.</p>
+<div class="thanks" id="thanks">תודה! ההודעה נשלחה, נחזור אליכם בהקדם.</div>
+<form action="https://formsubmit.co/Salsa126@gmail.com" method="POST" id="cf">
+  <input type="hidden" name="_subject" value="הודעה חדשה מטופס צור קשר באתר סלסה">
+  <input type="hidden" name="_template" value="table">
+  <input type="hidden" name="_next" id="next" value="">
+  <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+  <div class="row2">
+    <label>שם<input name="שם" required autocomplete="name"></label>
+    <label>אימייל לתשובה<input name="email" type="email" required autocomplete="email" dir="ltr"></label>
+  </div>
+  <div class="row2">
+    <label>טלפון (לא חובה)<input name="טלפון" type="tel" autocomplete="tel" dir="ltr"></label>
+    <label>נושא<select name="נושא"><option>שאלה כללית</option><option>דיווח על מחיר שגוי</option><option>רשת או סניף חסרים</option><option>הצעה לשיפור</option><option>תקלה באתר</option><option>אחר</option></select></label>
+  </div>
+  <label>ההודעה<textarea name="הודעה" required></textarea></label>
+  <button type="submit">שליחה</button>
+  <p class="muted">אפשר גם לכתוב ישירות ל־<a href="mailto:Salsa126@gmail.com">Salsa126@gmail.com</a>. שליחת הטופס כפופה ל<a href="terms.html">תנאי השימוש</a>.</p>
+</form>
+<script>
+document.getElementById("next").value=location.href.split("?")[0].split("#")[0]+"?sent=1";
+if(/[?&]sent=1/.test(location.search)){document.getElementById("thanks").classList.add("on")}
+</script>
+</div></main>
+<footer><div class="wrap"><b>סלסה פראייר</b> | מי שלא משווה – משלם יותר!<br><a href="terms.html">תנאי שימוש</a> · <a href="contact.html">צור קשר</a></div></footer>
+</body>
+</html>
