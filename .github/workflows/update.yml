@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "10 * * * *"   # every hour; also picks up new branches from the chains' store files
   workflow_dispatch:
+  repository_dispatch:     # sent by the price script on the computer in Israel after each upload
+    types: [local-prices]
   push:
     branches: [main]
 
