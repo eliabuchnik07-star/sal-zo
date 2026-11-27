@@ -44,14 +44,44 @@ CITY = {
 UNKNOWN = {}  # city codes we have no name for (printed for maintenance)
 
 # Online stores (StoreType 2 in the store files). They get a delivery fee added to the basket total.
-ONLINE_RE = re.compile(r"אונליין|און ?- ?ליין|ONLINE|אינטרנט|ליקוט", re.I)
-DELIVERY_FEE = 35.9  # most chains charge 35.90 for a supermarket delivery (TheMarker, July 2026)
+ONLINE_RE = re.compile(r"אונליין|און ?-? ?ליין|ONLINE|אינטרנט|ליקוט|משלוחים", re.I)
+DELIVERY_FEE = 35.9  # most chains charge 35.90 for a supermarket delivery (TheMarker, July 2026; Victory, Hazi Hinam terms)
 # online stores that deliver to most of the country: shown in every city
 NATIONAL_ONLINE = {"shufersal-413", "ramilevi-39"}
 
+# Online stores that publish one price file but deliver to many cities (checked on the chains' own sites, 2026-11-27).
+# A list = the cities in the chain's published delivery areas. "chain" = every city where the chain has a branch
+# (used when the chain does not publish its delivery areas).
+_CARREFOUR_AREAS = [  # carrefour.co.il /v2/retailers/1540/branches: delivery areas of its 13 online branches
+    "חולון", "בת ים", "ראשון לציון", "נס ציונה", "קרית אונו", "אור יהודה", "יהוד-מונוסון",
+    "אור עקיבא", "זכרון יעקב", "חדרה", "חריש", "פרדס חנה-כרכור", "בנימינה-גבעת עדה", "נתניה", "אילת",
+    "אשקלון", "נתיבות", "אופקים", "שדרות", "קרית גת", "אשדוד", "באר שבע", "עומר", "בית שמש",
+    "רמת גן", "גבעתיים", "בני ברק", "תל אביב-יפו", "יקנעם עילית", "קרית טבעון", "קרית אתא", "קרית ביאליק",
+    "קרית מוצקין", "קרית ים", "חיפה", "טירת כרמל", "רמת השרון", "ירושלים", "מבשרת ציון",
+    "הוד השרון", "כפר סבא", "רעננה", "הרצליה", "כפר יונה", "תל מונד", "פתח תקווה", "ראש העין",
+    "עפולה", "נוף הגליל", "מגדל העמק", "טבריה",
+    "רמלה", "לוד", "מודיעין-מכבים-רעות", "רחובות", "יבנה", "קרית עקרון", "גדרה", "שוהם"]
+ONLINE_COVER = {
+    "carrefour-471": _CARREFOUR_AREAS,
+    "carrefour-472": [c for c in _CARREFOUR_AREAS if c not in ("באר שבע", "עומר")],  # ybitan.co.il, retailer 1131
+    "carrefour-473": [c for c in _CARREFOUR_AREAS if c not in ("באר שבע", "עומר", "בית שמש")],  # quik.co.il, 1541
+    # shop.hazi-hinam.co.il delivery policy page: list of delivery towns, minimum order 500
+    "hazihinam-103": ["אור יהודה", "אריאל", "אשדוד", "באר יעקב", "בני ברק", "בת ים", "גבעת שמואל", "גבעתיים",
+                      "גדרה", "גן יבנה", "הוד השרון", "הרצליה", "חולון", "יבנה", "יהוד-מונוסון", "כפר סבא", "לוד",
+                      "מודיעין-מכבים-רעות", "מזכרת בתיה", "נס ציונה", "נתניה", "פתח תקווה", "קרית אונו",
+                      "קרית עקרון", "ראש העין", "ראשון לציון", "רחובות", "רמלה", "רמת גן", "רמת השרון", "רעננה",
+                      "תל אביב-יפו"],
+    "victory-97": "chain",  # victoryonline.co.il: areas only in its sign-up form; minimum order 250
+    "mahsaneihashuk-97": "chain",
+}
+# online stores whose names don't say so, and brands that publish under another chain's files
+ONLINE_IDS = {"carrefour-472", "carrefour-473", "keshet-314"}
+ONLINE_CHAIN = {"carrefour-472": "יינות ביתן", "carrefour-473": "קוויק"}
+ONLINE_FEE = {"keshet-314": 14.9}  # Keshet's store on Wolt: Wolt fee estimate, like Wolt Market
 
-def is_online(store_type, name):
-    return store_type.strip() == "2" and bool(ONLINE_RE.search(name))
+
+def is_online(store_type, name, sid=""):
+    return sid in ONLINE_IDS or (store_type.strip() == "2" and bool(ONLINE_RE.search(name)))
 
 
 def get(url, tries=4):
@@ -210,7 +240,7 @@ def shufersal():
             city = (s.findtext("City") or "").strip()
             sid = str(int(s.findtext("StoreID")))
             name = (s.findtext("StoreName") or "").strip()
-            online = is_online(s.findtext("StoreType") or "", name)
+            online = is_online(s.findtext("StoreType") or "", name, "shufersal-" + sid)
             if online and "shufersal-" + sid in NATIONAL_ONLINE:
                 city = next(iter(CITY))
             if city not in CITY:
@@ -313,18 +343,18 @@ def parse_stores(xml, chain_key, chain_name):
         g = lambda t: next((c.text or "" for c in s if c.tag.lower() == t.lower()), "").strip()
         city = g("City")
         sid = str(int(g("StoreID") or 0))
-        online = is_online(g("StoreType"), g("StoreName"))
-        if online and f"{chain_key}-{sid}" in NATIONAL_ONLINE:
-            city = next(iter(CITY))
+        online = is_online(g("StoreType"), g("StoreName"), f"{chain_key}-{sid}")
+        if online and (f"{chain_key}-{sid}" in NATIONAL_ONLINE or f"{chain_key}-{sid}" in ONLINE_COVER):
+            city = next(iter(CITY))  # placeholder: main() places it in every city it delivers to
         if city not in CITY:
             city = guess_city(g("StoreName") + " " + g("Address"))
         if city not in CITY:
             UNKNOWN.setdefault(city, g("StoreName") + " / " + chain_name)
             continue
-        stores[sid] = {"id": f"{chain_key}-{sid}", "chain": chain_name, "sub": "", "name": g("StoreName"),
+        stores[sid] = {"id": f"{chain_key}-{sid}", "chain": ONLINE_CHAIN.get(f"{chain_key}-{sid}", chain_name), "sub": "", "name": g("StoreName"),
                        "address": g("Address"), "city": CITY[city]}
         if online:
-            stores[sid]["online"] = DELIVERY_FEE
+            stores[sid]["online"] = ONLINE_FEE.get(f"{chain_key}-{sid}", DELIVERY_FEE)
     return stores
 
 
@@ -536,9 +566,18 @@ def main():
     rows = [(s, items) for s, items in rows if len(items) >= 300]  # skip kiosks / broken files
     by_city = {}
     national = [(s, items) for s, items in rows if s["id"] in NATIONAL_ONLINE]
+    covered = [(s, items) for s, items in rows if s["id"] in ONLINE_COVER]
     for s, items in rows:
-        if s["id"] not in NATIONAL_ONLINE:
+        if s["id"] not in NATIONAL_ONLINE and s["id"] not in ONLINE_COVER:
             by_city.setdefault(s["city"], []).append((s, items))
+    # regional online stores: one price file, many delivery cities (ONLINE_COVER)
+    for s, items in covered:
+        cover = ONLINE_COVER[s["id"]]
+        if cover == "chain":
+            cover = {o["city"] for o, _ in rows if o["chain"] == s["chain"] and "online" not in o}
+        for city in cover:
+            if city in by_city:  # only cities that have physical stores too
+                by_city[city].append((s, items))
     for city in by_city:  # nationwide online stores compete in every city that has physical stores
         by_city[city] += national
     today = dt.date.today()
