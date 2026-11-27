@@ -31,6 +31,7 @@ jobs:
           python-version: "3.12"
       - name: הורדת מחירים מכל הרשתות
         run: python3 scripts/fetch_prices.py
+      # Product photo search is off: the site waits for an official licensed catalog (GS1 / manufacturers).
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
