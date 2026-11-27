@@ -320,7 +320,7 @@ body.docked footer{padding-bottom:96px}
 <footer>
   <div class="wrap">
     <b>סלסה פראייר</b> | מי שלא משווה – משלם יותר!
-    <p>המחירים הם מחירי מדף שהרשתות מפרסמות לפי חוק שקיפות המחירים, עדיין בלי מבצעים. ההשוואה היא רק בין הסניפים בעיר שבחרתם. תמונות מוצרים: Open Food Facts ו־Unsplash.</p>
+    <p>המחירים הם מחירי מדף שהרשתות מפרסמות לפי חוק שקיפות המחירים, עדיין בלי מבצעים. ההשוואה היא רק בין הסניפים בעיר שבחרתם. תמונות מוצרים: Open Food Facts ומאגרי האחות שלו (רישיון CC BY-SA) ו־Unsplash.</p>
     <div class="flinks"><a href="terms.html">תנאי שימוש</a> · <a href="privacy.html">מדיניות פרטיות</a> · <a href="contact.html">צור קשר</a></div>
   </div>
 </footer>
@@ -374,7 +374,10 @@ function catOf(i){const p=CITY.products[i];if(p.length>4)return p[4];const t=" "
 let catLimit=60;
 const POPULAR=["חלב","לחם","ביצים","במבה","קוטג'","קפה","אורז","שוקולד","טונה","שמן"];
 
-function imgSrcs(code,name){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(IMG+p.replace(/\.200\.jpg$/,".400.jpg"));
+// product photos from the free Open Food Facts family (cache prefix b:/p:/t: = beauty, household, pet food)
+const IMG_HOST={"b":"https://images.openbeautyfacts.org/images/products/","p":"https://images.openproductsfacts.org/images/products/","t":"https://images.openpetfoodfacts.org/images/products/"};
+function imgUrl(p){const m=/^([bpt]):/.exec(p);return (m?IMG_HOST[m[1]]+p.slice(2):IMG+p).replace(/\.200\.jpg$/,".400.jpg")}
+function imgSrcs(code,name){const p=IMAGES[code],a=[];if(p&&p[0]!=="-")a.push(imgUrl(p));
   for(const t of EXTRA_IMG)a.push(t.replace("{code}",code));
   if(name&&!NOT_LOOSE.test(name)){const n=" "+norm(name);for(const [re,u] of GENERIC)if(re.test(n)){a.push(GEN+u);break}}
   return a}
