@@ -1,0 +1,45 @@
+name: שעון עדכון שעתי
+
+# GitHub's own hourly timer (cron) is unreliable: on 26-27/11 it ran only 3 times in ~40 hours.
+# This workflow is a steady clock instead: one run stays awake for ~5 hours, starts the price
+# update every hour at about :05, and before it ends starts the next copy of itself.
+# The cron line below is only a backup that restarts the clock if the chain ever breaks.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 */2 * * *"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: hourly-timer
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: הפעלת עדכון המחירים כל שעה
+        run: |
+          end=$(( $(date +%s) + 5*3600 ))
+          while :; do
+            now=$(date +%s)
+            # seconds until the next hh:05 UTC
+            next=$(( (now / 3600) * 3600 + 300 ))
+            [ "$next" -le "$now" ] && next=$(( next + 3600 ))
+            [ "$next" -ge "$end" ] && break
+            sleep $(( next - now ))
+            gh workflow run update.yml --ref main && echo "$(date -u +%H:%M) הופעל עדכון" || echo "$(date -u +%H:%M) לא הצלחתי להפעיל עדכון"
+          done
+      - name: הפעלת השעון הבא
+        if: always()
+        run: |
+          for i in 1 2 3 4; do gh workflow run hourly-timer.yml --ref main && exit 0; sleep 30; done
+          exit 1
