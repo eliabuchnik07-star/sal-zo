@@ -491,8 +491,8 @@ def write_city(n, city, rows, today, cats=None, report=None):
                 # chains' own short codes collide: 2009 is brisket at one chain and bananas at another
                 key = s["id"].split("-")[0] + "." + c
             k[key] = v
-            if key not in codes:
-                codes[key] = v
+            if key not in codes or (not codes[key][1].strip() and v[1].strip()):
+                codes[key] = v  # first chain's details; a chain with an empty name gets another chain's
         keyed.append(k)
     rows = [(s, k) for (s, _), k in zip(rows, keyed)]
     code_list = sorted(codes)

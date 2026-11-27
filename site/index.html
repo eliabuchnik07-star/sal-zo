@@ -549,7 +549,7 @@ function status(m,i){const v=m.get(i);if(!v)return "none";const days=v[1];
 const ST={in:["✓","במלאי","ok"],maybe:["?","לא בטוח","mb"],out:["✕","כנראה חסר","no"],none:["—","לא נמכר בסניף","no"]};
 
 function find(t,limit){const w=norm(t).split(" ").filter(Boolean);if(!w.length)return[];
-  const out=[],q=w.join(" ");
+  let out=[];const q=w.join(" ");
   for(let i=0;i<CITY.search.length;i++){const s=CITY.search[i];if(w.every(x=>s.includes(x)))out.push(i)}
   // products that ARE what was searched come first: "מלפפון" shows cucumbers before cucumber-scented soap.
   // The searched thing's category = the usual category of products whose name starts with the search words.
@@ -559,6 +559,10 @@ function find(t,limit){const w=norm(t).split(" ").filter(Boolean);if(!w.length)r
   const qcat=top<0?null:CITY.cat[top];
   const rank=i=>{const n=" "+norm(CITY.products[i][1]),same=qcat&&CITY.cat[i]===qcat;
     return starts(i)?(same?0:1):same?2:n.includes(" "+q)?3:4};
+  // searching for food (cucumber, lemon...) never shows shampoo, soap or cleaners that only smell like it
+  const NONFOOD=["home","care"];
+  const NONFOOD_WORD=/(^| )(שמפו|סבון|דאודורנט|דאו|קרם|מרכך|תחליב|תרחיץ|גל|מסכה|מסיכה|מסכת|ניחוח|בניחוח|מבשם|מטהר|נוזל|ספריי|תרסיס|מגבונים|אקונומיקה|דאב)( |$)/;
+  if(qcat&&!NONFOOD.includes(qcat))out=out.filter(i=>!NONFOOD.includes(CITY.cat[i])&&!(CITY.cat[i]==null&&NONFOOD_WORD.test(norm(CITY.products[i][1]))));
   const r=new Map(out.map(i=>[i,rank(i)]));
   out.sort((a,b)=>r.get(a)-r.get(b)||CITY.carry[b]-CITY.carry[a]);return out.slice(0,limit)}
 
