@@ -362,12 +362,13 @@ const CATS=[
  ["pantry","🍝","מזווה ובישול","אורז פסטה ספגטי קמח סוכר מלח שמן עדשים חומוס שעועית פתיתים קוסקוס רסק רוטב תבלין פפריקה כמון קטשופ מיונז חרדל טחינה דבש ריבה ממרח דגני קורנפלקס שיבולת אטריות שימורי תירס זיתים מרק"],
  ["snacks","🍪","חטיפים ומתוקים","במבה ביסלי תפוצ ציפס שוקולד חטיף וופל סוכריות מסטיק פופקורן בייגלה אגוזים גרעינים קליק"],
  ["drinks","🥤","משקאות","מים מיץ קולה משקה סודה בירה יין וודקה קפה תה נקטר ספרייט פאנטה שוקו פריגת תפוזינה"],
+ ["alcohol","🍷","אלכוהול ויין","בירה בירות יין יינות וודקה ויסקי וויסקי ליקר ערק ברנדי קוניאק טקילה שמפניה"],
  ["frozen","🧊","קפואים","קפוא קפואה קפואים גלידה שלגון ארטיק"],
  ["home","🧽","ניקיון ובית","אקונומיקה סבון ניקוי כביסה מרכך כלים טישו טואלט מגבונים שקיות אלומיניום ספוג מטהר מנקה"],
  ["care","🧴","פארם ותינוקות","שמפו משחת מברשת דאודורנט קרם טיטולים חיתולים האגיס פמפרס תחליב גילוח הנקה"]
 ].map(([id,ic,name,w])=>({id,ic,name,re:new RegExp("(^|[ \\-/,.(])("+w.split(" ").map(x=>x.length<=3?x+"(?=$|[ \\-/,.)%0-9])":x).join("|")+")")}));
 // a product belongs to the first category that matches, in this order (so "שוקולד חלב" is a snack, "דגני בוקר" is pantry)
-const CAT_ORDER=["snacks","frozen","care","home","drinks","deli","canned","baking","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
+const CAT_ORDER=["snacks","frozen","care","home","alcohol","drinks","deli","canned","baking","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
 // the category is decided when the data is built (scripts/categorize.py + the quality checker in scripts/quality.py);
 // the word lists above are only a fallback for data files from before that
 function catOf(i){const p=CITY.products[i];if(p.length>4)return p[4];const t=" "+CITY.search[i];for(const c of CAT_ORDER)if(c.re.test(t))return c.id;return null}
