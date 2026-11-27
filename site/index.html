@@ -27,7 +27,7 @@
   --amber:#f2b35a; --amber-soft:#3a2a10; --red:#ff8a80; --red-soft:#3d1d1a;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
 *{box-sizing:border-box}
-html{scroll-padding-top:120px}
+html{scroll-padding-top:180px}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -58,6 +58,7 @@ nav .cnt:empty{display:none}
 /* page */
 main{flex:1;padding-block:26px 110px}
 .page{display:none}.page.on{display:block}
+[hidden]{display:none!important}
 h1,h2{font-family:var(--display);color:var(--brand-dk);text-wrap:balance}
 h1{font-size:1.9rem;margin:0 0 16px}
 h2{font-size:1.3rem;margin:28px 0 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -69,9 +70,9 @@ h2 small,h1 small{font-family:var(--body);font-weight:500;color:var(--muted);fon
 .hero h1{font-size:2.5rem;line-height:1.15;margin:0 0 12px}
 .hero p{font-size:1.15rem;color:var(--muted);margin:0}
 .hero img{width:42%;max-width:440px;height:auto;flex:none;margin-block:-14px}
-.search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 16px;margin:24px 0 8px;box-shadow:var(--shadow)}
+.search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 14px;margin:0 0 12px;box-shadow:var(--shadow)}
 .search svg{width:22px;height:22px;color:var(--muted);flex:none}
-.search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:1.08rem;color:inherit;padding:16px 0;outline:none}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:1.08rem;color:inherit;padding:11px 0;outline:none}
 .meta{color:var(--muted);font-size:.85rem}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;font-weight:500}
@@ -130,7 +131,7 @@ h2 small,h1 small{font-family:var(--body);font-weight:500;color:var(--muted);fon
 /* product comparison page */
 .back{border:0;background:none;color:var(--brand);font-weight:700;padding:0;margin-bottom:14px;display:inline-flex;gap:6px}
 .cmp{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:start}
-.cmp-side{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px;position:sticky;top:110px}
+.cmp-side{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px;position:sticky;top:170px}
 .cmp-side h1{font-size:1.4rem;margin:4px 0 0}
 .cmp-side .heart{position:static;width:auto;height:auto;border-radius:10px;padding:10px;font-size:1rem;display:flex;gap:6px;justify-content:center;font-weight:700}
 .sum{background:var(--brand-soft);color:var(--brand-dk);font-weight:700;border-radius:12px;padding:12px 14px;margin-bottom:10px}
@@ -225,6 +226,7 @@ body.docked footer{padding-bottom:96px}
   nav::-webkit-scrollbar{display:none}
   nav a{padding:7px 10px;font-size:.92rem}
   main{padding-top:16px}
+  .search{margin-bottom:8px;padding:0 12px}.search input{padding:9px 0;font-size:1rem}
   .hero{display:block;padding:22px}
   .hero h1{font-size:1.85rem}.hero p{font-size:1rem}
   .hero img{display:block;width:62%;max-width:280px;height:auto;margin:10px auto -6px}
@@ -265,6 +267,12 @@ body.docked footer{padding-bottom:96px}
       <select id="city" aria-label="העיר שלך"></select><span class="caret" aria-hidden="true">▼</span>
     </label>
   </div>
+  <div class="wrap">
+    <div class="search" role="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="חיפוש מוצר או ברקוד: חלב, במבה, קפה…" autocomplete="off" enterkeyhint="search" disabled>
+    </div>
+  </div>
 </header>
 
 <main class="wrap">
@@ -276,11 +284,7 @@ body.docked footer{padding-bottom:96px}
       </div>
       <img src="brand/logo.png" alt="סלסה פראייר: מי שלא משווה – משלם יותר!" width="900" height="621">
     </div>
-    <div class="search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="חיפוש מוצר או ברקוד: חלב, במבה, קפה…" autocomplete="off" enterkeyhint="search" disabled>
-    </div>
-    <div class="meta" id="meta">טוען נתונים…</div>
+    <div class="meta" id="meta" style="margin-top:12px">טוען נתונים…</div>
     <div id="home"></div>
   </section>
 
@@ -467,6 +471,7 @@ function catRow(on){return `<div class="catrow"><a class="cat${on?"":" on"}" hre
 function byPopular(filter){const ids=[];for(let i=0;i<CITY.products.length;i++)if(!filter||filter(i))ids.push(i);ids.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);return ids}
 
 function renderHome(){
+  document.querySelector(".hero").hidden=!!$("q").value.trim();
   const box=$("home");if(!CITY){box.innerHTML=`<h2>קטגוריות מוצרים</h2>${catTiles()}<div style="margin-top:20px">${waitBox()}</div>`;return}
   const t=$("q").value.trim();
   if(t){const hits=find(t,60);
@@ -623,7 +628,7 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if
   else if(a==="tobest")$("rtitle").scrollIntoView({behavior:"smooth",block:"start"});
   else if(a==="back"){navs>0?history.back():location.hash="#/"}
 });
-let timer;$("q").oninput=()=>{clearTimeout(timer);timer=setTimeout(renderHome,150)};
+let timer;$("q").oninput=()=>{clearTimeout(timer);if(PAGE!=="home"&&$("q").value.trim()){location.hash="#/";return}timer=setTimeout(renderHome,150)};
 $("q").onkeydown=e=>{if(e.key==="Enter")$("q").blur()};
 window.addEventListener("hashchange",()=>{navs++;route()});
 route();boot();
