@@ -79,7 +79,7 @@ h2 small,h1 small{font-family:var(--body);font-weight:500;color:var(--muted);fon
 .chip:hover{border-color:var(--brand);color:var(--brand)}
 
 /* categories */
-.cats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.cats{display:grid;grid-template-columns:repeat(7,1fr);gap:12px}
 .cat{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px 8px;text-align:center;font-weight:600;color:var(--ink);text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;transition:border-color .15s,transform .15s}
 .cat span{font-size:1.9rem;line-height:1}
 .cat:hover{border-color:var(--brand);transform:translateY(-2px)}
@@ -230,7 +230,7 @@ body.docked footer{padding-bottom:96px}
   .hero{display:block;padding:22px}
   .hero h1{font-size:1.85rem}.hero p{font-size:1rem}
   .hero img{display:block;width:62%;max-width:280px;height:auto;margin:10px auto -6px}
-  .cats{grid-template-columns:repeat(4,1fr);gap:6px}
+  .cats{grid-template-columns:repeat(5,1fr);gap:6px}
   .cat{padding:10px 2px;font-size:.72rem;line-height:1.2;gap:6px;border-radius:12px}.cat span{font-size:1.5rem}
   .cmp-side .thumb{width:60%;margin:0 auto}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -357,7 +357,9 @@ const CATS=[
  ["meat","🥩","בשר, עוף ודגים","בשר עוף חזה שניצל כרעיים פרגית הודו נקניק נקניקיות קבב המבורגר אנטריקוט טחון כבד פסטרמה סלמי צלי שוקיים כנפיים דג דגים סלמון טונה אמנון מושט בקלה דניס לברק סרדינים הרינג"],
  ["bread","🥖","לחם ומאפים","לחם לחמניות לחמניה פיתה פיתות בגט חלה טורטיה עוגה עוגת עוגיות קרואסון מאפה בורקס קרקר פריכיות"],
  ["deli","🥗","סלטים ומעדנייה","סלט סלטי חומוס מטבוחה"],
- ["pantry","🥫","מזווה ובישול","אורז פסטה ספגטי קמח סוכר מלח שמן עדשים חומוס שעועית פתיתים קוסקוס רסק רוטב תבלין פפריקה כמון קטשופ מיונז חרדל טחינה דבש ריבה ממרח דגני קורנפלקס שיבולת אטריות שימורי תירס זיתים מרק"],
+ ["canned","🥫","שימורים","שימורי שימורים חמוצים זיתים קורנישונים"],
+ ["baking","🧁","אפייה","קמח שמרים ונילין קורנפלור"],
+ ["pantry","🍝","מזווה ובישול","אורז פסטה ספגטי קמח סוכר מלח שמן עדשים חומוס שעועית פתיתים קוסקוס רסק רוטב תבלין פפריקה כמון קטשופ מיונז חרדל טחינה דבש ריבה ממרח דגני קורנפלקס שיבולת אטריות שימורי תירס זיתים מרק"],
  ["snacks","🍪","חטיפים ומתוקים","במבה ביסלי תפוצ ציפס שוקולד חטיף וופל סוכריות מסטיק פופקורן בייגלה אגוזים גרעינים קליק"],
  ["drinks","🥤","משקאות","מים מיץ קולה משקה סודה בירה יין וודקה קפה תה נקטר ספרייט פאנטה שוקו פריגת תפוזינה"],
  ["frozen","🧊","קפואים","קפוא קפואה קפואים גלידה שלגון ארטיק"],
@@ -365,7 +367,7 @@ const CATS=[
  ["care","🧴","פארם ותינוקות","שמפו משחת מברשת דאודורנט קרם טיטולים חיתולים האגיס פמפרס תחליב גילוח הנקה"]
 ].map(([id,ic,name,w])=>({id,ic,name,re:new RegExp("(^|[ \\-/,.(])("+w.split(" ").map(x=>x.length<=3?x+"(?=$|[ \\-/,.)%0-9])":x).join("|")+")")}));
 // a product belongs to the first category that matches, in this order (so "שוקולד חלב" is a snack, "דגני בוקר" is pantry)
-const CAT_ORDER=["snacks","frozen","care","home","drinks","deli","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
+const CAT_ORDER=["snacks","frozen","care","home","drinks","deli","canned","baking","pantry","meat","dairy","bread","fruit"].map(id=>CATS.find(c=>c.id===id));
 // the category is decided when the data is built (scripts/categorize.py + the quality checker in scripts/quality.py);
 // the word lists above are only a fallback for data files from before that
 function catOf(i){const p=CITY.products[i];if(p.length>4)return p[4];const t=" "+CITY.search[i];for(const c of CAT_ORDER)if(c.re.test(t))return c.id;return null}
@@ -547,8 +549,18 @@ function status(m,i){const v=m.get(i);if(!v)return "none";const days=v[1];
 const ST={in:["✓","במלאי","ok"],maybe:["?","לא בטוח","mb"],out:["✕","כנראה חסר","no"],none:["—","לא נמכר בסניף","no"]};
 
 function find(t,limit){const w=norm(t).split(" ").filter(Boolean);if(!w.length)return[];
-  const out=[];for(let i=0;i<CITY.search.length;i++){const s=CITY.search[i];if(w.every(x=>s.includes(x)))out.push(i)}
-  out.sort((a,b)=>CITY.carry[b]-CITY.carry[a]);return out.slice(0,limit)}
+  const out=[],q=w.join(" ");
+  for(let i=0;i<CITY.search.length;i++){const s=CITY.search[i];if(w.every(x=>s.includes(x)))out.push(i)}
+  // products that ARE what was searched come first: "מלפפון" shows cucumbers before cucumber-scented soap.
+  // The searched thing's category = the usual category of products whose name starts with the search words.
+  const starts=i=>norm(CITY.products[i][1]).startsWith(q);let top=-1;
+  const key=i=>(norm(CITY.products[i][1])===q?1000:0)+CITY.carry[i];  // a product named exactly "מלפפון" decides
+  for(const i of out)if(starts(i)&&CITY.cat[i]&&(top<0||key(i)>key(top)))top=i;
+  const qcat=top<0?null:CITY.cat[top];
+  const rank=i=>{const n=" "+norm(CITY.products[i][1]),same=qcat&&CITY.cat[i]===qcat;
+    return starts(i)?(same?0:1):same?2:n.includes(" "+q)?3:4};
+  const r=new Map(out.map(i=>[i,rank(i)]));
+  out.sort((a,b)=>r.get(a)-r.get(b)||CITY.carry[b]-CITY.carry[a]);return out.slice(0,limit)}
 
 function sub(i){const c=CITY.products[i][0];if(!basket[c])return;if(--basket[c].q<=0)delete basket[c];save()}
 function add(i){const p=CITY.products[i];basket[p[0]]=basket[p[0]]||{q:0,name:p[1],unit:p[3]};basket[p[0]].q++;save()}
