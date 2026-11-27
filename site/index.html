@@ -646,6 +646,10 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if
 });
 let timer;$("q").oninput=()=>{clearTimeout(timer);if(PAGE!=="home"&&$("q").value.trim()){location.hash="#/";return}timer=setTimeout(renderHome,150)};
 $("q").onkeydown=e=>{if(e.key==="Enter")$("q").blur()};
+// logo / "ראשי": always land on a clean home screen with an empty search
+document.addEventListener("click",e=>{const a=e.target.closest('a[href="#/"]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;
+  e.preventDefault();clearTimeout(timer);$("q").value="";$("q").blur();
+  if(location.hash!=="#/")location.hash="#/";else route();window.scrollTo(0,0)});
 window.addEventListener("hashchange",()=>{navs++;route()});
 route();boot();
 </script>
