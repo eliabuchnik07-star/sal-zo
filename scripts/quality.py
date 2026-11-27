@@ -82,7 +82,30 @@ def fix_city(products, prices, cats):
     """products: [[code, name, manufacturer, unit], ...]; prices: per store [[i, price, days, promo?], ...];
     cats: {code: category}. Returns (products, prices, findings) with category as the 5th field
     of each product and duplicates merged."""
-    findings = {"removed_from_category": [], "merged_duplicates": [], "same_name_different_product": []}
+    findings = {"removed_from_category": [], "merged_duplicates": [], "same_name_different_product": [],
+                "dropped_prices": [], "dropped_nameless": []}
+
+    # 0. prices that can't be right: placeholder prices (0.01) and a branch at 4x the city median for the
+    #    same barcode (a box or a kilo priced against single units) are left out of the comparison
+    per = defaultdict(list)
+    for row in prices:
+        for r in row:
+            per[r[0]].append(r[1])
+    med = {i: statistics.median(v) for i, v in per.items() if len(v) >= 4}
+    for si, row in enumerate(prices):
+        keep = []
+        for r in row:
+            m = med.get(r[0])
+            if r[1] < 0.1 or (m and (r[1] > m * 4 or r[1] < m / 4)):
+                findings["dropped_prices"].append([products[r[0]][0], products[r[0]][1], r[1], m])
+            else:
+                keep.append(r)
+        prices[si] = keep
+    # products without a name (some online stores publish empty names) can't be shown
+    nameless = {i for i, p in enumerate(products) if not (p[1] or "").strip()}
+    if nameless:
+        findings["dropped_nameless"] = [products[i][0] for i in sorted(nameless)]
+        prices = [[r for r in row if r[0] not in nameless] for row in prices]
 
     # 1. duplicates: same normalized name + unit, same price in every store that sells both -> merge
     groups = defaultdict(list)
@@ -146,7 +169,7 @@ def fix_city(products, prices, cats):
             elif is_internal(code):
                 tag = "קוד " + code
             else:
-                tag = "ברקוד …" + code[-4:]
+                tag = "ברקוד …" + code[-6:]
             p[1] = f"{p[1]} ({tag})"
         findings["same_name_different_product"].append([products[i][0] for i in idx])
 
