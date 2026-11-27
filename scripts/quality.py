@@ -10,7 +10,9 @@ Every hourly build (fetch_prices.py) calls `fix_city()` on each city before it i
 
 Once a day .github/workflows/daily-check.yml runs this file on the live site
 (python3 scripts/quality.py --site URL), checks every city again plus price outliers and stale
-data, and writes a report (GitHub job summary and an issue in the repository).
+data, and writes a report (GitHub job summary and an issue in the repository). The report also
+shows coverage per category, ideas for new categories (THEMES), the most common first words of
+uncategorized products, and a random sample per category to check by eye.
 """
 import json, os, re, statistics, sys, urllib.request
 from collections import Counter, defaultdict
@@ -245,10 +247,67 @@ LABELS = {
 }
 
 
-def sweep(site):
+# themes that may deserve a category of their own: (label, words in the name, categories it
+# would come out of). A theme is suggested once it has SUGGEST_MIN products on the site.
+SUGGEST_MIN = 150
+THEMES = [
+    ("תינוקות (נפרד מפארם)", W("טיטולים חיתולים מוצץ מוצצים בקבוק_תינוק מטרנה סימילאק נוטרילון פמפרס האגיס לתינוק לתינוקות"), None),
+    ("חיות מחמד", C.PETS, None),
+    ("אלכוהול", W("בירה יין וודקה ויסקי ליקר ערק רום גין טקילה קוניאק ברנדי שמפניה קאווה למברוסקו"), {"drinks"}),
+    ("חד פעמי", W("חד_פעמי חד_פעמיות חדפ מפיות קשיות"), {"home"}),
+    ("כלי בית ומטבח", W("סיר מחבת קומקום סכין סכינים קערה קערות צלחת צלחות כוס כוסות מגש תבנית תבניות קופסת מיכל מספריים"), {"home", None}),
+    ("ביגוד וטקסטיל", C.CLOTHES | W("מגבת מגבות סדין סדינים שמיכה כרית"), {None}),
+    ("צעצועים ומשחקים", W("צעצוע צעצועי משחק משחקי בובה בובת פאזל לגו קלפים כדור_משחק פליימוביל"), {None}),
+    ("חשמל ואלקטרוניקה", W("מטען כבל סוללה סוללות אוזניות נורה נורות מאוורר מפזר רמקול מצלמה מנורה פנס שעון"), {None, "home"}),
+    ("כלי כתיבה", W("עט עטים עפרון עפרונות מחברת מחברות טוש טושים מחדד מחק דבק סלוטייפ"), {None}),
+]
+
+
+def _theme_hit(name, words):
+    toks = C.tokens(name)
+    joined = set(toks) | {a + "_" + b for a, b in zip(toks, toks[1:])}
+    return bool(joined & words)
+
+
+def suggestions(products):
+    """products: {barcode: (name, {category: number of cities})}. Ideas for the owner: themes that
+    could become categories, the most common first words among uncategorized products, and
+    products that got different categories in different cities."""
+    out = []
+    for label, words, source in THEMES:
+        hits = [(n, c) for n, cats in products.values() for c in [max(cats, key=cats.get)]
+                if (source is None or c in source) and _theme_hit(n, words)]
+        if len(hits) >= SUGGEST_MIN:
+            where = Counter(C_NAME.get(c, "בלי קטגוריה") for _, c in hits).most_common(3)
+            out.append(f"- **לשקול קטגוריה \"{label}\"**: {len(hits):,} מוצרים באתר"
+                       f" (כרגע ב: {', '.join(f'{w} {k:,}' for w, k in where)}). לדוגמה: "
+                       + " · ".join(n for n, _ in hits[:4]))
+    heads = Counter()
+    for n, cats in products.values():
+        if max(cats, key=cats.get) is None:
+            t = C.tokens(n)
+            if t:
+                heads[t[C._head(t)]] += 1
+    if heads:
+        out.append("- **המילים הנפוצות בתחילת שם של מוצרים בלי קטגוריה** (לבדוק אם צריך כלל חדש): "
+                   + ", ".join(f"{w} ({k})" for w, k in heads.most_common(25)))
+    mixed = [(n, cats) for n, cats in products.values() if len(cats) > 1]
+    if mixed:
+        out.append(f"- **{len(mixed):,} מוצרים קיבלו קטגוריה שונה בערים שונות** (בדרך כלל שם שונה בכל רשת). לדוגמה: "
+                   + " · ".join(f"{n} ({'/'.join(C_NAME.get(c, 'בלי') for c in cats)})" for n, cats in mixed[:6]))
+    return out
+
+
+C_NAME = {c[0]: c[2] for c in C.CATEGORIES}
+
+
+def sweep(site, sample=8, seed=None):
+    import random
     site = site.rstrip("/")
     idx = get_json(site + "/data/index.json")
     totals, examples = Counter(), defaultdict(list)
+    products = {}                      # barcode -> [name, Counter(category -> cities)]
+    stores = prices = 0
     for c in idx["cities"]:
         try:
             d = get_json(f"{site}/data/{c['file']}")
@@ -256,16 +315,47 @@ def sweep(site):
             totals["city_failed"] += 1
             examples["city_failed"].append(f"{c['name']}: {e}")
             continue
+        stores += len(d["stores"])
+        prices += sum(len(r) for r in d["prices"])
+        for p in d["products"]:
+            cat = p[4] if len(p) > 4 else None
+            e = products.setdefault(p[0], [p[1], Counter()])
+            e[1][cat] += 1
         for k, v in check_city(d).items():
             totals[k] += len(v)
             examples[k] += [f"{c['name']}: {x}" for x in v[:3]]
-    lines = [f"# דוח בודק האיכות היומי", f"נתוני האתר עודכנו: {idx.get('updated')} · {len(idx['cities'])} ערים", ""]
+    uniq = {k: (v[0], v[1]) for k, v in products.items()}
+    per_cat = Counter(max(cats, key=cats.get) for _, cats in uniq.values())
+    n = len(uniq) or 1
+    lines = ["# דוח בודק האיכות היומי",
+             f"נתוני האתר עודכנו: {idx.get('updated')}", "",
+             "## מה נבדק היום",
+             f"כל האתר: {len(idx['cities']) - totals['city_failed']} מתוך {len(idx['cities'])} ערים, {stores:,} סניפים, "
+             f"{prices:,} מחירים, {len(uniq):,} מוצרים שונים. כל מוצר נבדק מול הכללים של הקטגוריה שלו.",
+             "",
+             "| קטגוריה | מוצרים | אחוז |", "|---|---|---|"]
+    for cat, k in sorted(per_cat.items(), key=lambda x: -x[1]):
+        lines.append(f"| {C_NAME.get(cat, 'בלי קטגוריה')} | {k:,} | {100 * k / n:.1f}% |")
+    lines.append("")
     if not totals:
         lines.append("לא נמצאו בעיות. ✅")
-    for k, n in totals.most_common():
-        lines.append(f"## {LABELS.get(k, k)}: {n}")
+    for k, cnt in totals.most_common():
+        lines.append(f"## {LABELS.get(k, k)}: {cnt}")
         lines += [f"- {x}" for x in examples[k][:15]]
         lines.append("")
+    lines += ["## הצעות לשיפור", "הבודק לא משנה את אלה לבד. הם רעיונות לבעל האתר.", ""]
+    lines += suggestions(uniq) or ["אין הצעות היום."]
+    lines.append("")
+    # a random handful from every category, so a person can eyeball mistakes the rules miss
+    rnd = random.Random(seed)
+    lines += ["## מדגם אקראי לבדיקה בעין", "כמה מוצרים אקראיים מכל קטגוריה. מוצר שלא שייך לקטגוריה = כלל חדש שצריך להוסיף.", ""]
+    by_cat = defaultdict(list)
+    for name, cats in uniq.values():
+        by_cat[max(cats, key=cats.get)].append(name)
+    for cat in [c[0] for c in C.CATEGORIES] + [None]:
+        names = by_cat.get(cat) or []
+        if names:
+            lines.append(f"- **{C_NAME.get(cat, 'בלי קטגוריה')}**: " + " · ".join(rnd.sample(names, min(sample, len(names)))))
     return "\n".join(lines), totals
 
 
